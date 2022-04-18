@@ -1,17 +1,21 @@
-const { facexAPI } = require('./facex_api');
-const facex = new facexAPI('172.16.1.136', 21093);
+const { facexAPI } = require('./facex_api'); // API methods file
+const IP = '172.16.1.136'; // FaceX API IP
+const PORT = 21093; // FaceX API port
+const suspectListName = 'Suspects'; // Name for the suspects list
+const monitoringTime = 10; // Minutes
+const facex = new facexAPI(IP, PORT);
 
 async function test() {
     try {
-        let search = await searchList('Suspects2');
-        if (search == false) return `Cannot create and access list. Reason: ${search}`;
+        let searchRes = await searchList(suspectListName);
+        if (searchRes == false) return `Cannot create and access list. Reason: ${searchRes}`;
 
         let lastPersonId = search.persons_count == 0 ? 1 : search.persons_count + 1;
     
         let getDetection = await facex.getDetectionImage(179200);
         let image = await getDetection.buffer();
 
-        let res = await createPersonAddImage(search['id'], lastPersonId, image);
+        let res = await createPersonAddImage(searchRes['id'], lastPersonId, image);
         if (res !== 'ok') {console.log(res)};
     }
     catch (err) {
@@ -21,13 +25,13 @@ async function test() {
     async function searchList(name) {
         try {
             let getList = await facex.searchList(name);
-            let res = await getList.json();
-            if ( res.lists.length == 0 ) {
-                let response =  await facex.createList(name, {priority: 0, match_threshold: 0.7});
-                if (response.status == 201) {
+            let response = await getList.json();
+            if ( response.lists.length == 0 ) {
+                let res =  await facex.createList(name, {priority: 0, match_threshold: 0.7});
+                if (res.status == 201) {
                     return await searchList(name);
                 }
-                else return response.status;
+                else return res.status;
             }
             return res.lists[0];
         }
