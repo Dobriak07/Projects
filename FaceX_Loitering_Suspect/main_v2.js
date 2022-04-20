@@ -37,7 +37,7 @@ securos.connect(async (core) => {
         let noMatchData = JSON.parse(e.params.comment);
         try {
             let result = await noMatch(noMatchData.id);
-    
+
             if (result.status == 201) {
                 let timeout = setTimeout(deletePerson, monitoringTime*60000, result.data.id);
                 timers.set(result.data.id, timeout);
@@ -87,16 +87,16 @@ securos.connect(async (core) => {
     async function noMatch(id) {
         try {
             let searchRes = await searchList(suspectListName);
-            if (searchRes.status != 201) return {section: searchRes.section, status: searchRes.status, message: searchRes.statusText};
+            if (searchRes.status != 200) return {section: searchRes.section, status: searchRes.status, message: searchRes.statusText};
 
-            let lastPersonId = searchRes.persons_count == 0 ? 1 : searchRes.persons_count + 1;
+            let lastPersonId = searchRes.data.persons_count == 0 ? 1 : searchRes.data.persons_count + 1;
             let getDetection = await facex.getDetectionImage(id);
-            if (getDetection != 200) return {section: 'Get detection', status: getDetection.status, message: getDetection.statusText};
+            if (getDetection.status != 200) return {section: 'Get detection', status: getDetection.status, message: getDetection.statusText};
             logger.debug(`Detection found`);
             loggerConsole.debug(`Detection found`);
 
             let image = await getDetection.buffer();
-            let create = await createPerson(searchRes['id'], lastPersonId);
+            let create = await createPerson(searchRes.data['id'], lastPersonId);
             if (create.status == 201) {
                 let addImage = await addPersonImage(create.data.id, image);
                 let response = await addImage.json();
@@ -131,9 +131,11 @@ securos.connect(async (core) => {
                     loggerConsole.debug(`List created`);
                     await searchList(name);
                 }
-                else return {section: 'Create List', status: result.status, message: result.statusText};
+                else {
+                    return {section: 'Create List', status: result.status, message: result.statusText};
+                }
             }
-            return response.lists[0];
+            return {section: 'Search List', status: getList.status, message: getList.statusText, data: response.lists[0]};
         }
         catch(err) {
             if (err) throw err;
@@ -148,6 +150,7 @@ securos.connect(async (core) => {
                 notes: JSON.stringify({modified: Date.now().toString()}), 
                 list_id: listId
             }); 
+            console.log(createPerson);
             let response = await createPerson.json();
             if (createPerson.status == 201) {
                 logger.debug(`Person created`);
@@ -191,6 +194,22 @@ securos.connect(async (core) => {
     }
 
     async function watchDog() {
-
+        let searchList = await facex.searchList('Suspects');
+        if (searchList.status == 200) {
+            let response = await searchList.json();
+            // console.log(response);
+            let getPersons = await facex.getListPersons(response.lists[0].id);
+            // console.log(getPersons);
+            if (getPersons.status == 200) {
+                let personList = await getPersons.json();
+                if (personList._pagination.total_records != 0) {
+                    // console.log(personList);
+                    for (person of personList.persons) {
+                        // console.log(person);
+                        console.log(person.last_name, person.notes)
+                    }
+                }
+            }
+        }
     }
 })
