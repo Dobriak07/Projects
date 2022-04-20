@@ -3,7 +3,6 @@ const path = require('path');
 const securos = require('securos');
 const { facexAPI } = require('facex_api'); // FaceX RestAPI methods file
 const log4js = require('log4js'); // Logger
-const { get } = require('http');
 // Modules setion end
 
 // Constants section start
@@ -12,7 +11,8 @@ const IP = '127.0.0.1'; // FaceX RestAPI IP
 const PORT = 21093; // FaceX RestAPI port
 const suspectListName = 'Suspects'; // Name for the suspects list
 const matchThreshold = 0.7; // Suspect list match threshold
-const monitoringTime = 1; // Minutes
+const monitoringTime = 3; // In minutes
+const watchdog = 1; // In minutes
 const facex = new facexAPI(IP, PORT);
 const timers = new Map();
 // Constants section end
@@ -33,6 +33,8 @@ let loggerConsole = log4js.getLogger('console');
 // Logger configuration end
 
 securos.connect(async (core) => {
+    setInterval(watchDog, watchdog*60000);
+    
     core.registerEventHandler('FACE_X_SERVER', '*', 'NO_MATCH', async (e) => {
         let noMatchData = JSON.parse(e.params.comment);
         try {
@@ -206,7 +208,16 @@ securos.connect(async (core) => {
                     // console.log(personList);
                     for (person of personList.persons) {
                         // console.log(person);
-                        console.log(person.last_name, person.notes)
+                        let notes = JSON.parse(person.notes);
+                        if (notes.modified * 1 + monitoringTime * 60000 < Date.now()) {
+                            console.log(`Time to delete person id=${person.last_name}`);
+                            // console.log(person);
+                            let deletePerson = await facex.deletePerson(person.id);
+                            if (deletePerson.status == 200) {
+                                console.log(`Person ${person.last_name} successfully deleted`);
+                            }
+                        }
+                        // console.log(person.last_name, notes)
                     }
                 }
             }
