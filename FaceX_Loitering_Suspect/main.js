@@ -24,8 +24,8 @@ log4js.configure({
     },
     categories: {
       default: { appenders: [ 'console' ], level: 'trace' },
-      console: { appenders: ['console'], level: 'off' },
-      file: { appenders: ['file'], level: 'error', maxLogSize: 10000, backups: 5, layout: { type: 'basic' } },
+    //   console: { appenders: ['console'], level: 'debug' },
+      file: { appenders: ['file'], level: 'debug', maxLogSize: 10000, backups: 5, layout: { type: 'basic' } },
     }
 });
 let logger = log4js.getLogger('file');
