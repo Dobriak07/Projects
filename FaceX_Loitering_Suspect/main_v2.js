@@ -2,7 +2,7 @@
 const path = require('path');
 const fs = require('fs');
 const securos = require('securos');
-const { facexAPI } = require('facex_api'); // FaceX RestAPI methods file
+const { facexAPI } = require('facex_api'); // FaceX RestAPI class file
 const log4js = require('log4js'); // Logger
 // Modules setion end
 
@@ -11,7 +11,7 @@ const LOG_PATH = 'C:/ProgramData/ISS/logs/modules/Suspect'
 const IP = '127.0.0.1'; // FaceX RestAPI IP
 const PORT = 21093; // FaceX RestAPI port
 const suspectListName = 'Suspects'; // Name for the suspects list
-const matchThreshold = 0.7; // Suspect list match threshold
+const matchThreshold = 0.5; // Suspect list match threshold
 const monitoringTime = 2; // In minutes
 const watchdog = 10; // In seconds
 const facex = new facexAPI(IP, PORT);
@@ -41,18 +41,15 @@ securos.connect(async (core) => {
             let result = await noMatch(noMatchData.id);
 
             if (result.status == 201) {
-                logger.info(`New person. Added to suspects list. Id: ${JSON.stringify(result.id)}`);
-                loggerConsole.info(`New person. Added to suspects list. Id: ${JSON.stringify(result.id)}`);
+                log('info', `New person. Added to suspects list. Id: ${JSON.stringify(result.id)}`);
             }
             else {
-                logger.error(`Can't process logic. Reason: ${result.status}-${result.message}. Section: ${result.section}`);
-                loggerConsole.error(`Can't process logic. Reason: ${result.status}-${result.message}. Section: ${result.section}`);
+                log('error', `Can't process logic. Reason: ${result.status}-${result.message}. Section: ${result.section}`);
             }
         }
         catch(err) {
             if (err) {
-                logger.error(`Can't process logic. Reason: ${err.message}`);
-                loggerConsole.error(`Can't process logic. Reason: ${err.message}`);
+                log('error', `Can't process logic. Reason: ${err.message}`);
             }
         }
     })
@@ -71,21 +68,21 @@ securos.connect(async (core) => {
             }
             try {
                 let changePerson = await facex.changePerson(matchData.person.id, options);
+                if (changePerson.status != 200) {
+                    log('error', `Can't access and change person notes. Reason: ${changePerson.status}-${changePerson.statusText}`);
+                }
                 let data = {
                     image: matchData.detection._links.detection_image, 
                     id: matchData.person.id,
                     previous_modified: JSON.parse(matchData.person.notes).modified,
                     new_modified: modified
                 }
-                logger.info(`Suspect found. Id: ${data.id}. Updating timestamp info.`);
-                loggerConsole.info(`Suspect found. Id: ${data.id}. Updating timestamp info.`);
-                logger.debug(`Suspect found. Id: ${data.id}. Updating timestamp info. Data: ${JSON.stringify(data)}`);
-                loggerConsole.debug(`Suspect found. Id: ${data.id}. Updating timestamp info. Data: ${JSON.stringify(data)}`);
+                log('info', `Suspect found. Id: ${data.id}. Updating timestamp info.`);
+                log('debug', `Suspect found. Id: ${data.id}. Updating timestamp info. Data: ${JSON.stringify(data)}`);
             }
             catch(err) {
                 if (err) {
-                    logger.error(`Can't process logic. Reason: ${err.message}`);
-                    loggerConsole.error(`Can't process logic. Reason: ${err.message}`);
+                    log('error', `Can't process logic. Reason: ${err.message}`);
                 }
             }
         }
@@ -99,29 +96,24 @@ securos.connect(async (core) => {
             let lastPersonId = searchRes.data.persons_count == 0 ? 1 : searchRes.data.persons_count + 1;
             let getDetection = await facex.getDetectionImage(id);
             if (getDetection.status != 200) return {section: 'Get detection', status: getDetection.status, message: getDetection.statusText};
-            logger.trace(`Detection found`);
-            loggerConsole.trace(`Detection found`);
+            log('trace', `Detection found`);
 
             let image = await getDetection.buffer();
             let create = await createPerson(searchRes.data['id'], lastPersonId);
-            if (create.status == 201) {
+            if (create.status != 201) return {section: create.section, status: create.status, message: create.message};
                 let addImage = await addPersonImage(create.data.id, image);
                 if (addImage.status == 201) {
-                    logger.debug(`Image succesfully added. Person id: ${create.data.id}. Result: ${addImage.status}-${addImage.message}. Section: ${addImage.section}`);
-                    loggerConsole.debug(`Image succesfully added. Person id: ${create.data.id}. Result: ${addImage.status}-${addImage.message}. Section: ${addImage.section}`);
+                    log('debug', `Image succesfully added. Person id: ${create.data.id}. Result: ${addImage.status}-${addImage.message}. Section: ${addImage.section}`);
                     return {section: addImage.section, status: addImage.status, message: addImage.message, data: addImage.data, id: create.data.id};
                 }
                 else if (addImage.status == 422) {
-                    let deleteBad = await facex.deletePerson(create.data.id);
-                    logger.debug(`FaceX Server can't find face on image. Deleting person with id: ${create.data.id}. Image link: http://${IP}:${PORT}/v1/archive/detection/${id}/image`);
-                    loggerConsole.debug(`FaceX Server can't find face on image. Deleting person with id: ${create.data.id}. Image link: http://${IP}:${PORT}/v1/archive/detection/${id}/image`);
+                    log('debug', `FaceX Server can't find face on image. Deleting person with id: ${create.data.id}. Image link: http://${IP}:${PORT}/v1/archive/detection/${id}/image`);
+                    await deletePersonFromList(create.data.id);
                     return {section: addImage.section, status: addImage.status, message: addImage.message};
                 }
                 else {
                     return {section: addImage.section, status: addImage.status, message: addImage.message}; 
                 }    
-            }
-            return {section: create.section, status: create.status, message: create.message};
         }
         catch (err) {
             if (err) throw err;
@@ -132,20 +124,16 @@ securos.connect(async (core) => {
         try {
             let getList = await facex.searchList(name);
             if (getList.status != 200) return {section: 'Search List', status: getList.status, message: getList.statusText};
-            logger.trace(`List '${name}' found`);
-            loggerConsole.trace(`List '${name}' found`);
+            log('trace', `List '${name}' found`);
 
             let response = await getList.json();
             if ( response.lists.length == 0 ) {
                 let result =  await facex.createList(name, {priority: 0, match_threshold: matchThreshold});
-                if (result.status == 201) {
-                    logger.debug(`List '${name}' created`);
-                    loggerConsole.debug(`List '${name}' created`);
-                    await searchList(name);
-                }
-                else {
-                    return {section: 'Create List', status: result.status, message: result.statusText};
-                }
+
+                if (result.status != 201) return {section: 'Create List', status: result.status, message: result.statusText};
+                log('debug', `List '${name}' created`);
+
+                return await searchList(name);
             }
             return {section: 'Search List', status: getList.status, message: getList.statusText, data: response.lists[0]};
         }
@@ -163,13 +151,11 @@ securos.connect(async (core) => {
                 list_id: listId
             }); 
             
-            if (createPerson.status == 201) {
-                let response = await createPerson.json();
-                logger.trace(`Person created. Id: ${response.id}`);
-                loggerConsole.trace(`Person created. Id: ${response.id}`);
-                return {status: createPerson.status, message: createPerson.statusText, data: response};
-            }
-            return {section: 'Create person', status: createPerson.status, message: createPerson.statusText};
+            if (createPerson.status != 201) return {section: 'Create person', status: createPerson.status, message: createPerson.statusText};
+
+            let response = await createPerson.json();
+            log('trace', `Person created. Id: ${response.id}`);
+            return {status: createPerson.status, message: createPerson.statusText, data: response};            
         }
         catch(err) {
             if (err) throw err;
@@ -179,26 +165,26 @@ securos.connect(async (core) => {
     async function addPersonImage(id, image) {
         try {
             let addImage = await facex.addPhotoFromFile(id, image);
-            if (addImage.status == 201) {
-                let response = await addImage.json();
-                logger.trace(`Image added to person with id: ${id}`);
-                loggerConsole.trace(`Image added to person with id: ${id}`);
-                return {section: 'Add person image', status: addImage.status, message: addImage.statusText, data: response};
-            }
-            return {section: 'Add person image', status: addImage.status, message: addImage.statusText};
+            if (addImage.status != 201) return {section: 'Add person image', status: addImage.status, message: addImage.statusText};
+            
+            let response = await addImage.json();
+            log('trace', `Image added to person with id: ${id}`);
+            return {section: 'Add person image', status: addImage.status, message: addImage.statusText, data: response};            
         }
         catch(err) {
             if (err) throw err;
         }
     }
 
-    async function deletePerson(id) {
+    async function deletePersonFromList(id) {
         try {
-            let deletePerson = await facex.deletePerson(id);
-            if (deletePerson.status == 200) {
-                let response = await deletePerson.json();
-                logger.debug(`Person successfully deleted. Data: ${response}`);
-                loggerConsole.debug(`Person successfully deleted. Data: ${response}`);
+            let deleteResult = await facex.deletePerson(id);
+            if (deleteResult.status == 200) {
+                let response = await deleteResult.json();
+                log('info', `Person id: ${person.id}, last_name: ${person.last_name} successfully deleted`);
+            }
+            else {
+                log('debug', `Can't delete person. Reason: ${deleteResult.status}-${deleteResult.statusText}`)
             }
         }
         catch(err) {
@@ -209,46 +195,41 @@ securos.connect(async (core) => {
     async function watchDog() {
         try {
             let searchList = await facex.searchList('Suspects');
-            if (searchList.status == 200) {
-                let response = await searchList.json();
-                let getPersons = await facex.getListPersons(response.lists[0].id);
-                if (getPersons.status == 200) {
-                    let personList = await getPersons.json();
-                    if (personList._pagination.total_records != 0) {
-                        for (person of personList.persons) {
-                            let notes = JSON.parse(person.notes);
-                            if (notes.modified * 1 + monitoringTime * 60000 < Date.now()) {
-                                logger.debug(`Time to delete person id: ${person.id}`);
-                                loggerConsole.debug(`Time to delete person id: ${person.id}`);
-    
-                                let deletePerson = await facex.deletePerson(person.id);
-                                if (deletePerson.status == 200) {
-                                    logger.info(`Person id: ${person.id}, last_name: ${person.last_name} successfully deleted`);
-                                    loggerConsole.info(`Person id: ${person.id}, last_name: ${person.last_name} successfully deleted`);
-                                }
-                                else {
-                                    logger.debug(`Can't delete person. Reason: ${deletePerson.status}-${deletePerson.statusText}`);
-                                    loggerConsole.debug(`Can't delete person. Reason: ${deletePerson.status}-${deletePerson.statusText}`);
-                                }
-                            }
-                        }
-                    }
-                }
-                else {
-                    logger.error(`Can't get persons from list. Reason: ${getPersons.status}-${getPersons.statusText}`);
-                    loggerConsole.error(`Can't get persons from list. Reason: ${getPersons.status}-${getPersons.statusText}`);
-                }
+
+            if (searchList.status != 200) {
+                log('error', `Can't find list. Reason: ${searchList.status}-${searchList.statusText}`);
+                return;
             }
-            else {
-                logger.error(`Can't find list. Reason: ${searchList.status}-${searchList.statusText}`);
-                loggerConsole.error(`Can't find list. Reason: ${searchList.status}-${searchList.statusText}`);
+
+            let response = await searchList.json();
+            let getPersons = await facex.getListPersons(response.lists[0].id);
+
+            if (getPersons.status != 200) {
+                log('error', `Can't get persons from list. Reason: ${getPersons.status}-${getPersons.statusText}`);
+                return;
+            }
+
+            let personList = await getPersons.json();
+            if (personList._pagination.total_records == 0) return;
+
+            for (person of personList.persons) {
+                let notes = JSON.parse(person.notes);
+
+                if (notes.modified * 1 + monitoringTime * 60000 < Date.now()) {
+                    log('debug', `Time to delete person id: ${person.id}`);
+                    await deletePersonFromList(person.id);
+                }
             }
         }
         catch (err) {
             if (err) {
-                logger.error(`Can't process watchdog. Reason: ${err.message}`);
-                loggerConsole.error(`Can't process watchdog. Reason: ${err.message}`);
+                log('error', `Can't process watchdog. Reason: ${err.message}`);
             }
         }
+    }
+
+    async function log(level = 'off', message = '') {
+        logger[level](message);
+        loggerConsole[level](message);
     }
 })
