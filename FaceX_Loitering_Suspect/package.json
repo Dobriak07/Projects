@@ -1,5 +1,7 @@
 {
   "dependencies": {
+    "form-data": "^4.0.0",
+    "log4js": "^6.4.5",
     "node-fetch": "^2.6.7",
     "parse-multipart-data": "^1.2.1"
   }
