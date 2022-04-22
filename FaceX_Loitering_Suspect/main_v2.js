@@ -1,13 +1,13 @@
-// Modules section start
+// Modules section
 const path = require('path');
 const fs = require('fs');
 const securos = require('securos');
 const { facexAPI } = require('facex_api'); // FaceX RestAPI class file
 const log4js = require('log4js'); // Logger
 const fetch = require('node-fetch');
-// Modules setion end
+// Modules setion
 
-// Constants section start
+// Constants section
 const LOG_PATH = 'C:/ProgramData/ISS/logs/modules/Suspect'
 const IP = '127.0.0.1'; // FaceX RestAPI IP
 const PORT = 21093; // FaceX RestAPI port
@@ -16,12 +16,13 @@ const matchThreshold = 0.5; // Suspect list match threshold
 const monitoringTime = 2; // In minutes
 const watchdog = 10; // In seconds
 const facex = new facexAPI(IP, PORT);
-// Constants section end
-// Logger configuration start
+// Constants section
+
+// Logger section
 log4js.configure({
     appenders: {
       console: { type: 'console', layout: { type: 'pattern', pattern: '%d{yyyy-MM-dd hh:mm:ss.SSS} [%-5p] %m' } },
-      file: { type: 'file', filename: path.join(LOG_PATH, 'suspects.log'), maxLogSize: 10000, backups: 5, layout: { type: 'pattern', pattern: '%d{yyyy-MM-dd hh:mm:ss.SSS} [%-5p] %m' } }
+      file: { type: 'file', filename: path.join(LOG_PATH, 'suspects.log'), maxLogSize: 100000, backups: 5, layout: { type: 'pattern', pattern: '%d{yyyy-MM-dd hh:mm:ss.SSS} [%-5p] %m' } }
     },
     categories: {
       default: { appenders: [ 'console' ], level: 'trace' },
@@ -31,7 +32,7 @@ log4js.configure({
 });
 let logger = log4js.getLogger('file');
 let loggerConsole = log4js.getLogger('console');
-// Logger configuration end
+// Logger section
 
 securos.connect(async (core) => {
     setInterval(watchDog, watchdog * 1000);
