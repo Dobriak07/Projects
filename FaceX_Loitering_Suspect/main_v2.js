@@ -1,19 +1,20 @@
 // Modules section
 const path = require('path');
-const fs = require('fs');
 const securos = require('securos');
 const { facexAPI } = require('facex_api'); // FaceX RestAPI class file
 const log4js = require('log4js'); // Logger
-const fetch = require('node-fetch');
+const { get } = require('http');
 // Modules setion
 
 // Constants section
 const LOG_PATH = 'C:/ProgramData/ISS/logs/modules/Suspect'
 const IP = '127.0.0.1'; // FaceX RestAPI IP
 const PORT = 21093; // FaceX RestAPI port
-const suspectListName = 'Suspects'; // Name for the suspects list
+const SUSPECT_LIST = 'Suspects'; // Name for the suspects list
+const SCAMMERS_LIST = 'Scammers'; // Name for the scammers list
 const matchThreshold = 0.5; // Suspect list match threshold
 const monitoringTime = 2; // In minutes
+const detectionCount = 5; // After reaching this value person will be moved from suspects to scammers list
 const watchdog = 10; // In seconds
 const facex = new facexAPI(IP, PORT);
 // Constants section
@@ -36,9 +37,9 @@ let loggerConsole = log4js.getLogger('console');
 
 securos.connect(async (core) => {
     setInterval(watchDog, watchdog * 1000);
-    
+
     core.registerEventHandler('FACE_X_SERVER', '*', 'NO_MATCH', async (e) => {
-        
+
         let noMatchData = JSON.parse(e.params.comment);
         try {
             let result = await noMatch(noMatchData.id);
@@ -59,10 +60,23 @@ securos.connect(async (core) => {
 
     core.registerEventHandler('FACE_X_SERVER', '*', 'MATCH', async (e) => {
         let matchData = JSON.parse(e.params.comment);
-        
-        if (matchData.list.name == suspectListName) {
+
+        if (matchData.list.name == SUSPECT_LIST) {
             let modified = Date.now();
-            let count = JSON.parse(matchData.person.notes).count + 1;
+            let _count = JSON.parse(matchData.person.notes).count;
+            if (_count >= detectionCount) {
+                let searchRes = await searchList(SCAMMERS_LIST);
+                if (searchRes.status != 200) return {section: searchRes.section, status: searchRes.status, message: searchRes.statusText};
+
+                console.log(searchRes.data);
+                let move = await movePerson(searchRes.data.id, matchData.person.id);
+                if (move.status == 200) {
+                    let deletePerson = await deletePersonFromList(matchData.person.id);
+                    if (deletePerson.status == 200) return log('info', `Detection count reached. Person moved to scammers list`);
+                }
+            }
+
+            let count = _count + 1 ;
             let options = {
                 first_name: matchData.person.first_name,
                 middle_name: matchData.person.middle_name,
@@ -75,13 +89,13 @@ securos.connect(async (core) => {
                     log('error', `Can't access and change person notes. Reason: ${changePerson.status}-${changePerson.statusText}`);
                 }
                 let data = {
-                    image: matchData.detection._links.detection_image, 
+                    image: matchData.detection._links.detection_image,
                     id: matchData.person.id,
                     previous_modified: JSON.parse(matchData.person.notes).modified,
                     new_modified: modified
                 }
-                log('info', `Suspect found. Id: ${data.id}. Updating timestamp info.`);
-                log('debug', `Suspect found. Id: ${data.id}. Updating timestamp info. Data: ${JSON.stringify(data)}`);
+                log('info', `Suspect found. Id: ${data.id}. Updating timestamp and count info.`);
+                log('debug', `Suspect found. Id: ${data.id}. Updating timestamp and count info. Data: ${JSON.stringify(data)}`);
             }
             catch(err) {
                 if (err) {
@@ -93,18 +107,18 @@ securos.connect(async (core) => {
 
     async function noMatch(id) {
         try {
-            let searchRes = await searchList(suspectListName);
-            
+            let searchRes = await searchList(SUSPECT_LIST);
+
             if (searchRes.status != 200) return {section: searchRes.section, status: searchRes.status, message: searchRes.statusText};
 
             let lastPersonId = searchRes.data.persons_count == 0 ? 1 : searchRes.data.persons_count + 1;
             let getDetection = await facex.getAnnotatedImage(id);
-                        
+
             if (getDetection.status != 200) return {section: 'Get detection', status: getDetection.status, message: getDetection.statusText};
             log('trace', `Detection found`);
 
             let image = await annotatedImageParse(getDetection, id);
-            
+
             if (image.status != 200) return {section: image.section, status: image.status, message: image.message};
 
             let create = await createPerson(searchRes.data['id'], lastPersonId);
@@ -122,8 +136,8 @@ securos.connect(async (core) => {
                 }
                 else {
                     await deletePersonFromList(create.data.id);
-                    return {section: addImage.section, status: addImage.status, message: addImage.message}; 
-                }    
+                    return {section: addImage.section, status: addImage.status, message: addImage.message};
+                }
         }
         catch (err) {
             if (err) log('trace', `No_match function: ${err.message}`);
@@ -155,17 +169,17 @@ securos.connect(async (core) => {
     async function createPerson(listId, personId) {
         try {
             let createPerson = await facex.createPerson({
-                first_name: 'Suspect', 
-                last_name: personId, 
-                notes: JSON.stringify({modified: Date.now().toString(), count: 1}), 
+                first_name: 'Suspect',
+                last_name: personId,
+                notes: JSON.stringify({modified: Date.now().toString(), count: 1}),
                 list_id: listId
-            }); 
-            
+            });
+
             if (createPerson.status != 201) return {section: 'Create person', status: createPerson.status, message: createPerson.statusText};
 
             let response = await createPerson.json();
             log('trace', `Person created. Id: ${response.id}`);
-            return {status: createPerson.status, message: createPerson.statusText, data: response};            
+            return {status: createPerson.status, message: createPerson.statusText, data: response};
         }
         catch(err) {
             if (err) throw err;
@@ -177,10 +191,10 @@ securos.connect(async (core) => {
             let addImage = await facex.addAnnotetedPhoto(id, image);
 
             if (addImage.status != 201) return {section: 'Add person image', status: addImage.status, message: addImage.statusText};
-            
+
             let response = await addImage.json();
             log('trace', `Image added to person with id: ${id}`);
-            return {section: 'Add person image', status: addImage.status, message: addImage.statusText, data: response};            
+            return {section: 'Add person image', status: addImage.status, message: addImage.statusText, data: response};
         }
         catch(err) {
             if (err) throw err;
@@ -197,6 +211,38 @@ securos.connect(async (core) => {
             else {
                 log('debug', `Can't delete person. Reason: ${deleteResult.status}-${deleteResult.statusText}`)
             }
+        }
+        catch(err) {
+            if (err) throw err;
+        }
+    }
+
+    async function movePerson(listId,personId) {
+        try{
+            let move = await facex.movePerson(listId, personId);
+            if (move.status == 200) return {section: 'Move Person', status: move.status, message: move.statusText, data: await move.json()};
+            return {section: 'Move Person', status: move.status, message: move.statusText, data: await move.json()};
+        }
+        catch(err) {
+            if (err) throw err;
+        }
+    }
+
+    async function annotatedImageParse(response, id) {
+        try {
+            let body = (await response.text()).replace(/(?:\\[rn]|[\r\n]+)+/g, '');
+            let boundary = (await response.headers.get('content-type')).split('boundary=')[1].replace(/"/g,'');
+            let bbox = JSON.parse(body.split(boundary)[2].split(`"data"`)[1].replace(/-/g,''));
+            let getImage = await facex.getDetectionImage(id);
+            if (getImage.status == 200) {
+                let image = await getImage.buffer();
+                let result = {
+                    image: image,
+                    hint_bbox: bbox.bbox_on_image
+                }
+                return {section: "Get Image", status: getImage.status, message: getImage.statusText, data: result}
+            }
+            return {section: "Get Image", status: getImage.status, message: getImage.statusText};
         }
         catch(err) {
             if (err) throw err;
@@ -236,27 +282,6 @@ securos.connect(async (core) => {
             if (err) {
                 log('error', `Can't process watchdog. Reason: ${err.message}`);
             }
-        }
-    }
-
-    async function annotatedImageParse(response, id) {
-        try {
-            let body = (await response.text()).replace(/(?:\\[rn]|[\r\n]+)+/g, '');
-            let boundary = (await response.headers.get('content-type')).split('boundary=')[1].replace(/"/g,'');
-            let bbox = JSON.parse(body.split(boundary)[2].split(`"data"`)[1].replace(/-/g,''));
-            let getImage = await facex.getDetectionImage(id);
-            if (getImage.status == 200) {
-                let image = await getImage.buffer();
-                let result = {
-                    image: image,
-                    hint_bbox: bbox.bbox_on_image
-                }
-                return {section: "Get Image", status: getImage.status, message: getImage.statusText, data: result}
-            }
-            return {section: "Get Image", status: getImage.status, message: getImage.statusText};
-        }
-        catch(err) {
-            if (err) throw err;
         }
     }
 

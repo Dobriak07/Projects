@@ -1,7 +1,7 @@
 1. Copy folder "node_modules" to "C:\Program Files (x86)\ISS\SecurOS\node.js"
 2. In SecurOS create NodeJS Script
 3. Copy all from "main_v2.js" to the SecurOS script
-4. Correct "IP" constant if FaceX Server set on different server in configuration
+4. Correct "IP" constant if FaceX Server presented on different server
 
 Other variables:
  "suspectListName" - name of the list, where persons will be added for watch
