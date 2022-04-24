@@ -7,15 +7,12 @@ const log4js = require('log4js'); // Logger
 
 // Constants section
 const LOG_PATH = 'C:/ProgramData/ISS/logs/modules/Suspect'
-const IP = '127.0.0.1'; // FaceX RestAPI IP
-const PORT = 21093; // FaceX RestAPI port
 const SUSPECT_LIST = 'Suspects'; // Name for the suspects list
 const SCAMMERS_LIST = 'Scammers'; // Name for the scammers list
 const matchThreshold = 0.5; // Suspect list match threshold
 const monitoringTime = 10; // In minutes
 const detectionCount = 5; // After reaching this value person will be moved from suspects to scammers list
 const watchdog = 10; // In seconds
-const facex = new facexAPI(IP, PORT);
 // Constants section
 
 // Logger section
@@ -35,13 +32,15 @@ let loggerConsole = log4js.getLogger('console');
 // Logger section
 
 securos.connect(async (core) => {
-    setInterval(watchDog, watchdog * 1000);
+    let faceServersList = await faceServers();
+    setInterval(watchDog, watchdog * 1000, faceServersList);
 
     core.registerEventHandler('FACE_X_SERVER', '*', 'NO_MATCH', async (e) => {
-
+        let conn = faceServersList.get(e.sourceId);
+        let facex = new facexAPI(conn.ip, conn.port);
         let noMatchData = JSON.parse(e.params.comment);
         try {
-            let result = await noMatch(noMatchData.id);
+            let result = await noMatch(facex, noMatchData.id);
 
             if (result.status == 201) {
                 log('info', `New person. Added to suspects list. Id: ${JSON.stringify(result.id)}`);
@@ -61,18 +60,20 @@ securos.connect(async (core) => {
         let matchData = JSON.parse(e.params.comment);
 
         if (matchData.list.name == SUSPECT_LIST) {
+            let conn = faceServersList.get(e.sourceId);
+            let facex = new facexAPI(conn.ip, conn.port);
             let modified = Date.now();
             let _count = JSON.parse(matchData.person.notes).count;
             let count = _count + 1 ;
     
             try {
                 if (count >= detectionCount) {
-                    let searchRes = await searchList(SCAMMERS_LIST);
+                    let searchRes = await searchList(facex, SCAMMERS_LIST);
                     if (searchRes.status != 200) return {section: searchRes.section, status: searchRes.status, message: searchRes.statusText};
 
-                    let move = await movePerson(searchRes.data.id, matchData.person.id);
+                    let move = await movePerson(facex, searchRes.data.id, matchData.person.id);
                     if (move.status == 200) {
-                        await deletePersonFromList(matchData.list.id, matchData.person.id);
+                        await deletePersonFromList(facex, matchData.list.id, matchData.person.id);
                         return;
                     }
                 }
@@ -109,9 +110,9 @@ securos.connect(async (core) => {
         }
     })
 
-    async function noMatch(id) {
+    async function noMatch(facex, id) {
         try {
-            let searchRes = await searchList(SUSPECT_LIST);
+            let searchRes = await searchList(facex, SUSPECT_LIST);
 
             if (searchRes.status != 200) return {section: searchRes.section, status: searchRes.status, message: searchRes.statusText};
             
@@ -122,34 +123,35 @@ securos.connect(async (core) => {
             if (getDetection.status != 200) return {section: 'Get detection', status: getDetection.status, message: getDetection.statusText};
             log('trace', `Detection found`);
 
-            let image = await annotatedImageParse(getDetection, id);
+            let image = await annotatedImageParse(facex, getDetection, id);
 
             if (image.status != 200) return {section: image.section, status: image.status, message: image.message};
 
-            let create = await createPerson(searchRes.data['id'], last_name);
+            let create = await createPerson(facex, searchRes.data['id'], last_name);
 
             if (create.status != 201) return {section: create.section, status: create.status, message: create.message};
-                let addImage = await addPersonImage(create.data.id, image.data);
-                if (addImage.status == 201) {
-                    log('debug', `Image succesfully added. Person id: ${create.data.id}. Result: ${addImage.status}-${addImage.message}. Section: ${addImage.section}`);
-                    return {section: addImage.section, status: addImage.status, message: addImage.message, data: addImage.data, id: create.data.id};
-                }
-                else if (addImage.status == 422) {
-                    log('debug', `FaceX Server can't find face on image. Deleting person with id: ${create.data.id}. Image link: http://${IP}:${PORT}/v1/archive/detection/${id}/image`);
-                    await deletePersonFromList(searchRes.data.id, create.data.id);
-                    return {section: addImage.section, status: addImage.status, message: addImage.message};
-                }
-                else {
-                    await deletePersonFromList(searchRes.data.id, create.data.id);
-                    return {section: addImage.section, status: addImage.status, message: addImage.message};
-                }
+
+            let addImage = await addPersonImage(facex, create.data.id, image.data);
+            if (addImage.status == 201) {
+                log('debug', `Image succesfully added. Person id: ${create.data.id}. Result: ${addImage.status}-${addImage.message}. Section: ${addImage.section}`);
+                return {section: addImage.section, status: addImage.status, message: addImage.message, data: addImage.data, id: create.data.id};
+            }
+            else if (addImage.status == 422) {
+                log('debug', `FaceX Server can't find face on image. Deleting person with id: ${create.data.id}. Image link: http://${facex.ip}:${facex.port}/v1/archive/detection/${id}/image`);
+                await deletePersonFromList(facex, searchRes.data.id, create.data.id);
+                return {section: addImage.section, status: addImage.status, message: addImage.message};
+            }
+            else {
+                await deletePersonFromList(facex, searchRes.data.id, create.data.id);
+                return {section: addImage.section, status: addImage.status, message: addImage.message};
+            }
         }
         catch (err) {
             if (err) log('trace', `No_match function: ${err.message}`);
         };
     }
 
-    async function searchList(name) {
+    async function searchList(facex, name) {
         try {
             let getList = await facex.searchList(name);
             if (getList.status != 200) return {section: 'Search List', status: getList.status, message: getList.statusText};
@@ -162,7 +164,7 @@ securos.connect(async (core) => {
                 if (result.status != 201) return {section: 'Create List', status: result.status, message: result.statusText};
                 log('debug', `List '${name}' created`);
 
-                return await searchList(name);
+                return await searchList(facex, name);
             }
             return {section: 'Search List', status: getList.status, message: getList.statusText, data: response.lists[0]};
         }
@@ -171,7 +173,7 @@ securos.connect(async (core) => {
         }
     }
 
-    async function createPerson(listId, personId) {
+    async function createPerson(facex, listId, personId) {
         try {
             let createPerson = await facex.createPerson({
                 first_name: 'Suspect',
@@ -191,7 +193,7 @@ securos.connect(async (core) => {
         }
     }
 
-    async function addPersonImage(id, image) {
+    async function addPersonImage(facex, id, image) {
         try {
             let addImage = await facex.addAnnotetedPhoto(id, image);
 
@@ -206,7 +208,7 @@ securos.connect(async (core) => {
         }
     }
 
-    async function deletePersonFromList(listId, personId) {
+    async function deletePersonFromList(facex, listId, personId) {
         try {
             let deleteResult = await facex.deletePersonFromList(listId, personId);
             if (deleteResult.status == 200) {
@@ -221,7 +223,7 @@ securos.connect(async (core) => {
         }
     }
 
-    async function movePerson(listId, personId) {
+    async function movePerson(facex, listId, personId) {
         try{
             let move = await facex.movePerson(listId, personId);
             return {section: 'Move Person', status: move.status, message: move.statusText};
@@ -231,7 +233,7 @@ securos.connect(async (core) => {
         }
     }
 
-    async function annotatedImageParse(response, id) {
+    async function annotatedImageParse(facex, response, id) {
         try {
             let body = (await response.text()).replace(/(?:\\[rn]|[\r\n]+)+/g, '');
             let boundary = (await response.headers.get('content-type')).split('boundary=')[1].replace(/"/g,'');
@@ -252,33 +254,41 @@ securos.connect(async (core) => {
         }
     }
 
-    async function watchDog() {
+    async function watchDog(face_list) {
         try {
-            let searchList = await facex.searchList(SUSPECT_LIST);
+            let i = 1;
+            for (key of face_list.keys()) {
+                if (i == 1) {
+                    let conn = face_list.get(key);
+                    let facex = new facexAPI(conn.ip, conn.port)
+                    let searchList = await facex.searchList(SUSPECT_LIST);
 
-            if (searchList.status != 200) {
-                log('error', `Can't find list. Reason: ${searchList.status}-${searchList.statusText}`);
-                return;
-            }
+                    if (searchList.status != 200) {
+                        log('error', `Can't find list. Reason: ${searchList.status}-${searchList.statusText}`);
+                        return;
+                    }
 
-            let response = await searchList.json();
-            let listId = response.lists[0].id;
-            let getPersons = await facex.getListPersons(listId);
+                    let response = await searchList.json();
+                    let listId = response.lists[0].id;
+                    let getPersons = await facex.getListPersons(listId);
 
-            if (getPersons.status != 200) {
-                log('error', `Can't get persons from list. Reason: ${getPersons.status}-${getPersons.statusText}`);
-                return;
-            }
+                    if (getPersons.status != 200) {
+                        log('error', `Can't get persons from list. Reason: ${getPersons.status}-${getPersons.statusText}`);
+                        return;
+                    }
 
-            let personList = await getPersons.json();
-            if (personList._pagination.total_records == 0) return;
+                    let personList = await getPersons.json();
+                    if (personList._pagination.total_records == 0) return;
 
-            for (person of personList.persons) {
-                let notes = JSON.parse(person.notes);
+                    for (person of personList.persons) {
+                        let notes = JSON.parse(person.notes);
 
-                if (notes.modified * 1 + monitoringTime * 60000 < Date.now()) {
-                    log('debug', `Time to delete person id: ${person.id}`);
-                    await deletePersonFromList(listId, person.id);
+                        if (notes.modified * 1 + monitoringTime * 60000 < Date.now()) {
+                            log('debug', `Time to delete person id: ${person.id}`);
+                            await deletePersonFromList(facex, listId, person.id);
+                        }
+                    }
+                    break;
                 }
             }
         }
@@ -286,6 +296,20 @@ securos.connect(async (core) => {
             if (err) {
                 log('error', `Can't process watchdog. Reason: ${err.message}`);
             }
+        }
+    }
+
+    async function faceServers() {
+        let facexConnection = new Map();
+        let servers = await core.getObjectsIds('FACE_X_SERVER');
+        for (id of servers) {
+            let server = await core.getObject('FACE_X_SERVER', id);
+            let slave = await core.getObject(server.parentType, server.parentId);
+            if (slave.params.ip_address != '') {
+                facexConnection.set(id, {ip: slave.params.ip_address, port: server.params.port})
+            }
+            else { facexConnection.set(id, {ip: server.parentId, port: server.params.port}) }
+            return facexConnection;
         }
     }
 
