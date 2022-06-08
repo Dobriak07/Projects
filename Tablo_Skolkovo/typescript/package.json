@@ -1,0 +1,16 @@
+{
+  "name": "tablo_skolkovo",
+  "version": "1.0.1",
+  "description": "",
+  "main": "./distr/tablo-builder.js",
+  "types": "./distr/tablo-builder.d.ts",
+  "files": ["distr/"],
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "PP",
+  "license": "ISC",
+  "dependencies": {
+    "iconv-lite": "^0.6.3"
+  }
+}
