@@ -18,8 +18,8 @@ const speedEffects = {
     'v4': 'b4', // <v4> - устанавливает скорость движения информации  4.
     'v5': 'b5', // <v5> - устанавливает скорость движения информации  5.
     'v6': 'b6', // <v6> - устанавливает скорость движения информации  6  (самая медленная скорость).
-    'v7': 'b7',
-    'v8': 'b8'
+    // 'v7': 'b7',
+    // 'v8': 'b8'
 }
 
 const visualEffects = {
@@ -52,7 +52,12 @@ const centerText = {
     'c1': '61' //<C1> - Включает автоматическую центровку текста.
 }
 
-class TabloBuilder {
+const fontText = {
+    'f6': 'e0', //<F6> - Переключает табло в режим вывода информации узким шрифтом (6х8 точек).
+    'f8': 'e1' //<F8> - Переключает табло в режим вывода информации широким шрифтом (8х8 точек).
+}
+
+module.exports = class TabloBuilder {
     constructor() {
         this.bufArr = [];
         this.startByte = Buffer.from('1021', 'hex');
@@ -62,7 +67,7 @@ class TabloBuilder {
 
     setString(string) {
         if(string === undefined) { 
-            console.log('Не передано значение')
+            console.log('Не передано значение строки')
             return this;
         }
 
@@ -79,7 +84,7 @@ class TabloBuilder {
 
     setPause(pause) {
         if(pause === undefined) { 
-            console.log('Не передано значение')
+            console.log('Не передано значение паузы')
             return this;
         }
 
@@ -100,7 +105,7 @@ class TabloBuilder {
 
     setSpeed(speed) {
         if(speed === undefined) { 
-            console.log('Не передано значение')
+            console.log('Не передано значение скорости')
             return this;
         }
 
@@ -121,7 +126,7 @@ class TabloBuilder {
 
     setEffect(effect) {
         if(effect === undefined) { 
-            console.log('Не передано значение')
+            console.log('Не передано значение появление')
             return this;
         }
 
@@ -142,7 +147,7 @@ class TabloBuilder {
 
     setCenter(center) {
         if(center === undefined) { 
-            console.log('Не передано значение')
+            console.log('Не передано значение центровки')
             return this;
         }
 
@@ -161,10 +166,81 @@ class TabloBuilder {
         return this;
     };
 
+    setFont(font) {
+        if(font === undefined) {
+            console.log('Не передано значение шрифта')
+            return this;
+        }
+
+        let _font = center.toString().toLowerCase();
+        if(_font === '') {
+            console.log('Передано пустое значение эффекта появления');
+            return this;
+        }
+
+        if(!Object.keys(fontText).includes(_font)) {
+            console.log('Передано неверное значение эффекта появления');
+            return this;
+        }
+
+        this.bufArr.push(Buffer.from(`ff${centerText[_font]}`, 'hex'));
+        return this;
+    }
+
+    addTime() {
+        this.bufArr.push(Buffer.from('ffc1', 'hex'));
+        return this;
+    }
+
+    addDate() {
+        this.bufArr.push(Buffer.from('ffc2', 'hex'));
+        return this;
+    }
+
+    addWeekday() {
+        this.bufArr.push(Buffer.from('ffc3', 'hex'));
+        return this;
+    }
+
+    addYear() {
+        this.bufArr.push(Buffer.from('ffc4', 'hex'));
+        return this;
+    }
+
+    setClock() {
+        let dateNow = new Date();
+        let arr = [];
+        arr.push(Buffer.from('10f7', 'hex'));
+
+        let clock = {
+            seconds: dateNow.getSeconds(),
+            minutes: dateNow.getMinutes(),
+            hours: dateNow.getHours(),
+            weekday: dateNow.getDay() + 1,
+            date: dateNow.getDate(),
+            month: dateNow.getMonth() + 1, 
+            year: 1 * dateNow.getFullYear().toString().slice(-2)
+        }
+
+        let sum = parseInt(clock.seconds.toString(), 16) ^ parseInt(clock.minutes.toString(), 16) ^ parseInt(clock.hours.toString(), 16) 
+            ^ parseInt(clock.weekday.toString(), 16) ^ parseInt(clock.date.toString(), 16) ^ parseInt(clock.month.toString(), 16)
+            ^ parseInt(clock.year.toString(), 16) ^ parseInt('55', 16);
+
+        for (let key in clock) {
+            if(clock[key] < 10 && clock[key] != 'year') {
+                clock[key] = `0${clock[key]}`;
+            }
+        }
+        
+        let str = `${clock.seconds}${clock.minutes}${clock.hours}${clock.weekday}${clock.date}${clock.month}${clock.year}${(sum*1).toString(16)}`;
+        
+        arr.push(Buffer.from(str, 'hex'));
+        arr.push(this.endByte);
+        return Buffer.concat(arr);
+    }
+
     finalize() {
         this.bufArr.push(this.endByte);
         return Buffer.concat(this.bufArr);
     }
 }
-
-module.exports = TabloBuilder;
