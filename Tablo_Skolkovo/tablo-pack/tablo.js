@@ -1,6 +1,6 @@
 const iconv = require('iconv-lite');
 
-const startByte = Buffer.from('1021', 'hex');
+let startByte = Buffer.from('1021', 'hex');
 const endByte = Buffer.from('10FE', 'hex');
 const tabloEffects = {
     /* Эффекты паузы */
@@ -57,8 +57,11 @@ const tabloEffects = {
     't4': 'c5'  //<t4> - выводит текущий год.
 }
 
-
-function tabloBuild(str) {
+/* Функция возвращает буффер строки с эффектами для передачи в табло с помощью встроенного модуля net NodeJS */
+function tabloBuild(str, address) {  //str - строка с эффектами, address - адрес табло, необязательный параметр
+    if(address) {
+        startByte = Buffer.from(`102${address}`, 'hex');
+    }
     let arr = str.split(/[[\]]/g).filter(v => v != '');
     let buff = [];
     buff.push(startByte);
@@ -76,6 +79,7 @@ function tabloBuild(str) {
     return Buffer.concat(buff);
 }
 
+/* Функция возвращает буффер установки внутреннего времени табло для передачи в табло с помощью встроенного модуля net NodeJS */
 function setupClock() {
     let dateNow = new Date();
     let arr = [];
