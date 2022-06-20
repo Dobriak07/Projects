@@ -43,14 +43,10 @@ function main() {
                     validate: promt_check_1.checkPort
                 },
                 {
-                    type: 'file-tree-selection',
-                    enableGoUpperDirectory: true,
-                    onlyShowDir: true,
-                    name: 'scanDir',
-                    message: 'Выберите папку для сканирования',
-                    // root: path.resolve("../"),
-                    pageSize: 50,
-                    hideRoot: false,
+                    type: 'input',
+                    name: 'path',
+                    message: 'Укажите путь до папки для сканирования',
+                    validate: promt_check_1.checkPath
                 },
             ]);
             console.log(input);

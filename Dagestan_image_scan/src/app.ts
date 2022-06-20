@@ -1,6 +1,5 @@
 import { Prompt } from "./core/prompt/prompt.service";
-import { checkIP, checkPort } from './helpers/promt.check'
-import path from "path";
+import { checkIP, checkPath, checkPort } from './helpers/promt.check'
 
 const START_OPTIONS  = {
     setup: 'Настроить модуль',
@@ -34,14 +33,10 @@ async function main() {
                 validate: checkPort
             },
             {
-                type: 'file-tree-selection',
-                enableGoUpperDirectory: true,
-                onlyShowDir: true,
-                name: 'scanDir',
-                message: 'Выберите папку для сканирования',
-                // root: path.resolve("../"),
-                pageSize: 50,
-                hideRoot: false,
+                type: 'input',
+                name: 'path',
+                message: 'Укажите путь до папки для сканирования',
+                validate: checkPath
             },
         ]);
         console.log(input);

@@ -14,8 +14,6 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Prompt = void 0;
 const inquirer_1 = __importDefault(require("inquirer"));
-const inquirer_file_tree_selection_prompt_1 = __importDefault(require("inquirer-file-tree-selection-prompt"));
-inquirer_1.default.registerPrompt('file-tree-selection', inquirer_file_tree_selection_prompt_1.default);
 class Prompt {
     input(questions) {
         return __awaiter(this, void 0, void 0, function* () {
