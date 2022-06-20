@@ -1,7 +1,7 @@
 {
   "name": "dagestan_image_scan",
   "version": "1.0.0",
-  "main": "index.js",
+  "main": "./index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -10,6 +10,15 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
-    "exifreader": "^4.5.0"
+    "axios": "^0.27.2",
+    "chalk": "^5.0.1",
+    "dedent": "^0.7.0",
+    "exifreader": "^4.5.0",
+    "inquirer": "^8.2.3",
+    "inquirer-file-tree-selection-prompt": "^1.0.19"
+  },
+  "devDependencies": {
+    "@types/inquirer": "^8.2.1",
+    "@types/node": "^18.0.0"
   }
 }

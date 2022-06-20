@@ -1,1 +1,0 @@
-const exif = require('exifreader');
