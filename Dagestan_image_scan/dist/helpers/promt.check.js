@@ -25,7 +25,7 @@ function checkPort(port) {
 }
 exports.checkPort = checkPort;
 function checkPath(dirPath) {
-    let dir = path_1.default.normalize(dirPath);
+    let dir = path_1.default.resolve(dirPath);
     try {
         let stat = fs_1.default.statSync(dir).isDirectory();
         if (stat) {

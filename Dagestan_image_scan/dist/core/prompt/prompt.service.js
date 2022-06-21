@@ -15,6 +15,9 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.Prompt = void 0;
 const inquirer_1 = __importDefault(require("inquirer"));
 class Prompt {
+    constructor() {
+        this.bottomBar = new inquirer_1.default.ui.BottomBar();
+    }
     input(questions) {
         return __awaiter(this, void 0, void 0, function* () {
             const result = yield inquirer_1.default.prompt(questions);
