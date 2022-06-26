@@ -12,12 +12,20 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.scanDir = exports.EXTENSIONS = void 0;
+exports.scanDir = void 0;
 const fs_1 = __importDefault(require("fs"));
 const path_1 = __importDefault(require("path"));
-exports.EXTENSIONS = ['.jpg', '.jpeg', '.json', '.js'];
-function scanDir(dirPath) {
+function scanDir(conf, dir) {
     return __awaiter(this, void 0, void 0, function* () {
+        const EXTENSIONS = conf.extensions;
+        let dirPath = '';
+        if (dir) {
+            dirPath = dir;
+        }
+        else {
+            dirPath = conf.path;
+        }
+        ;
         let result = { dirs: [], files: [] };
         try {
             let dir = yield fs_1.default.promises.readdir(path_1.default.normalize(dirPath));
@@ -25,7 +33,7 @@ function scanDir(dirPath) {
                 if (fs_1.default.statSync(path_1.default.join(dirPath, el)).isDirectory()) {
                     result.dirs.push(path_1.default.join(dirPath, el));
                 }
-                else if (exports.EXTENSIONS.includes(path_1.default.extname(el))) {
+                else if (EXTENSIONS.includes(path_1.default.extname(el))) {
                     result.files.push(path_1.default.join(dirPath, el));
                 }
             });

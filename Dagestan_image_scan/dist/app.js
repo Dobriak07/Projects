@@ -14,6 +14,7 @@ const prompt_service_1 = require("./core/prompt/prompt.service");
 const promt_check_1 = require("./helpers/promt.check");
 const fs_scan_1 = require("./helpers/fs.scan");
 const console_log_service_1 = require("./core/console/console.log.service");
+const exif_service_1 = require("./core/exif/exif.service");
 const START_OPTIONS = {
     setup: 'Настроить модуль',
     execute: 'Запустить модуль'
@@ -53,6 +54,13 @@ function startCLI() {
                     message: 'Укажите путь до папки для сканирования',
                     validate: promt_check_1.checkPath
                 },
+                {
+                    type: 'checkbox',
+                    name: 'extensions',
+                    message: 'Выберите расширения файлов для сканирования',
+                    default: ['.jpg', '.jpeg'],
+                    choices: ['.jpg', '.jpeg', '.png', '.tiff', '.heic', '.heif']
+                }
             ]);
             console.log(input);
             yield (0, config_handler_1.saveConfig)(input);
@@ -68,20 +76,22 @@ function startCLI() {
         }
     });
 }
-function main(conf) {
+function main(conf, dirPath) {
     return __awaiter(this, void 0, void 0, function* () {
         try {
-            let res = yield (0, fs_scan_1.scanDir)(conf.path);
+            let res = dirPath ? yield (0, fs_scan_1.scanDir)(conf, dirPath) : yield (0, fs_scan_1.scanDir)(conf);
             if ((res === null || res === void 0 ? void 0 : res.files.length) != 0 && (res === null || res === void 0 ? void 0 : res.files)) {
                 for (let file of res === null || res === void 0 ? void 0 : res.files) {
                     (0, console_log_service_1.printMessage)(`File found: ${file}`);
+                    let { exifInfo, imageBuf } = yield (0, exif_service_1.exifReader)(file);
+                    (0, console_log_service_1.printMessage)(JSON.stringify(exifInfo));
+                    console.log(imageBuf);
                 }
             }
             if ((res === null || res === void 0 ? void 0 : res.dirs.length) != 0 && (res === null || res === void 0 ? void 0 : res.dirs)) {
                 for (let dir of res.dirs) {
                     (0, console_log_service_1.printMessage)(`Switching to ${dir}`);
-                    let _dir = { path: dir };
-                    yield main(_dir);
+                    yield main(conf, dir);
                 }
             }
         }
