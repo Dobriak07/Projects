@@ -84,4 +84,3 @@ async function main(conf: Conf) {
         if (err) console.log(err);
     }
 }
-
