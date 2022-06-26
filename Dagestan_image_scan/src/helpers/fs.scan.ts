@@ -1,14 +1,15 @@
 import fs from 'fs';
 import path from 'path';
+import { Conf, DirScan } from '../core/types/myTypes';
 
-export const EXTENSIONS = ['.jpg', '.jpeg', '.json', '.js'];
 
-export type DirScan = {
-    dirs: string[],
-    files: string[]
-}
-
-export async function scanDir(dirPath:string): Promise<DirScan | undefined> {
+export async function scanDir(conf:Conf, dir?: string): Promise<DirScan | undefined> {
+    const EXTENSIONS = conf.extensions;
+    let dirPath: string = '';
+    if (dir) {
+        dirPath = dir;
+    }
+    else { dirPath = conf.path };
     let result: DirScan = { dirs: [], files: []};
     try {
         let dir = await fs.promises.readdir(path.normalize(dirPath));
