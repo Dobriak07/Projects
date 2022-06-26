@@ -1,0 +1,35 @@
+{
+  "name": "weather-cli-pavel",
+  "version": "1.0.0",
+  "private": false,
+  "description": "CLI for getting weather",
+  "main": "weather.js",
+  "bin": {
+    "weather": "weather.js"
+  },
+  "type": "module",
+  "scripts": {
+    "start": "node weather.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "cli",
+    "weather"
+  ],
+  "author": "P.P.",
+  "license": "ISC",
+  "homepage": "https://",
+  "repository": {
+    "type": "git",
+    "url": "https:"
+  },
+  "bugs": {
+    "url": "https://",
+    "email": "bigkot1989@gmail.com"
+  },
+  "dependencies": {
+    "axios": "^0.27.2",
+    "chalk": "^5.0.1",
+    "dedent-js": "^1.0.1"
+  }
+}
