@@ -1,11 +1,14 @@
 import { checkConfig, readConfig, saveConfig } from "./helpers/config.handler";
 import { Prompt } from "./core/prompt/prompt.service";
-import { checkIP, checkPath, checkPort } from './helpers/promt.check'
+import { checkIP, checkPath, checkPort, checkFaceListName } from './helpers/promt.check'
 import { scanDir } from "./helpers/fs.scan";
 import { printMessage } from "./core/console/console.log.service";
 import { exifReader } from './core/exif/exif.service';
 import { Conf } from './core/types/myTypes';
 import { DirScan } from "./core/types/myTypes";
+import path from "node:path";
+import { gmConvert } from "./core/imageconverter/convert_service";
+import { addImage } from "./core/facex/facexapi";
 
 const START_OPTIONS  = {
     setup: 'Настроить модуль',
@@ -44,6 +47,13 @@ async function startCLI() {
             },
             {
                 type: 'input',
+                name: 'list_name',
+                message: 'Введите имя Контрольного списка FaceX',
+                default: 'Image_scan',
+                validate: checkFaceListName
+            },
+            {
+                type: 'input',
                 name: 'path',
                 message: 'Укажите путь до папки для сканирования',
                 validate: checkPath
@@ -73,12 +83,7 @@ async function main(conf: Conf, dirPath?: string) {
     try {
         let res: DirScan | undefined = dirPath ? await scanDir(conf, dirPath) : await scanDir(conf);
         if (res?.files.length != 0 && res?.files) {
-            for (let file of res?.files) {
-                printMessage(`File found: ${file}`);
-                let { exifInfo, imageBuf } = await exifReader(file);
-                printMessage(JSON.stringify(exifInfo));
-                console.log(imageBuf);
-            }
+            await addImage(conf, res.files);
         }
         if (res?.dirs.length != 0 && res?.dirs) {
             for (let dir of res.dirs) {

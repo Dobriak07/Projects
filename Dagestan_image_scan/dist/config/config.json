@@ -1,5 +1,1 @@
-<<<<<<< HEAD
-{"ip":"127.0.0.1","port":"21093","path":"C:\\Users\\p-ponomarev\\Documents\\Project\\GitHub\\Projects\\Dagestan_image_scan\\dist"}
-=======
-{"ip":"127.0.0.1","port":"21093","path":"/Users/ryuga/Documents/Images","extensions":[".jpg",".jpeg",".png",".tiff",".heic",".heif"]}
->>>>>>> e68c1ab1f86c5125c427df8a130c09ab73a6c125
+{"ip":"127.0.0.1","port":"21093","list_name":"Групповой экспорт","path":"D:\\test_dagestan\\images","extensions":[".jpg",".jpeg",".png",".tiff",".heic",".heif"]}

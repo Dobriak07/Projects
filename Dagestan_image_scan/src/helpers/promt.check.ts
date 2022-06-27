@@ -29,3 +29,10 @@ export function checkPath(dirPath: string) {
         if (e) return 'Укажите корректный путь'
     }
 }
+
+export function checkFaceListName(name: string) {
+    if (name.length > 64) {
+        return 'Длина списка не должна превышать 64 символа'
+    }
+    return true;
+}

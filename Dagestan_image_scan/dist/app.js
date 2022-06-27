@@ -14,7 +14,7 @@ const prompt_service_1 = require("./core/prompt/prompt.service");
 const promt_check_1 = require("./helpers/promt.check");
 const fs_scan_1 = require("./helpers/fs.scan");
 const console_log_service_1 = require("./core/console/console.log.service");
-const exif_service_1 = require("./core/exif/exif.service");
+const facexapi_1 = require("./core/facex/facexapi");
 const START_OPTIONS = {
     setup: 'Настроить модуль',
     execute: 'Запустить модуль'
@@ -50,6 +50,13 @@ function startCLI() {
                 },
                 {
                     type: 'input',
+                    name: 'list_name',
+                    message: 'Введите имя Контрольного списка FaceX',
+                    default: 'Image_scan',
+                    validate: promt_check_1.checkFaceListName
+                },
+                {
+                    type: 'input',
                     name: 'path',
                     message: 'Укажите путь до папки для сканирования',
                     validate: promt_check_1.checkPath
@@ -81,12 +88,7 @@ function main(conf, dirPath) {
         try {
             let res = dirPath ? yield (0, fs_scan_1.scanDir)(conf, dirPath) : yield (0, fs_scan_1.scanDir)(conf);
             if ((res === null || res === void 0 ? void 0 : res.files.length) != 0 && (res === null || res === void 0 ? void 0 : res.files)) {
-                for (let file of res === null || res === void 0 ? void 0 : res.files) {
-                    (0, console_log_service_1.printMessage)(`File found: ${file}`);
-                    let { exifInfo, imageBuf } = yield (0, exif_service_1.exifReader)(file);
-                    (0, console_log_service_1.printMessage)(JSON.stringify(exifInfo));
-                    console.log(imageBuf);
-                }
+                yield (0, facexapi_1.addImage)(conf, res.files);
             }
             if ((res === null || res === void 0 ? void 0 : res.dirs.length) != 0 && (res === null || res === void 0 ? void 0 : res.dirs)) {
                 for (let dir of res.dirs) {

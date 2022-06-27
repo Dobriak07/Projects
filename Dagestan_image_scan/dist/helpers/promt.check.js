@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.checkPath = exports.checkPort = exports.checkIP = void 0;
+exports.checkFaceListName = exports.checkPath = exports.checkPort = exports.checkIP = void 0;
 const path_1 = __importDefault(require("path"));
 const fs_1 = __importDefault(require("fs"));
 function checkIP(ip) {
@@ -39,3 +39,10 @@ function checkPath(dirPath) {
     }
 }
 exports.checkPath = checkPath;
+function checkFaceListName(name) {
+    if (name.length > 64) {
+        return 'Длина списка не должна превышать 64 символа';
+    }
+    return true;
+}
+exports.checkFaceListName = checkFaceListName;
