@@ -1,10 +1,10 @@
-import axios, { AxiosInstance, AxiosResponse } from 'axios';
+import axios, { AxiosInstance } from 'axios';
 import FormData from 'form-data';
 import path from 'node:path';
 import { printMessage } from '../console/console.log.service';
 import { exifReader } from '../exif/exif.service';
 import { gmConvert } from '../imageconverter/convert_service';
-import { Conf } from '../types/myTypes';
+import { Conf, FacePerson, ImageID } from '../types/myTypes';
 const delay = async (ms: number) => await new Promise(resolve => setTimeout(resolve, ms));
 
 class AxiosCustom {
@@ -22,7 +22,25 @@ class AxiosCustom {
     };
 
     async getLists(listName: string) {
-        return await this.axios.get(`/v1/spotter/list?limit=1&offset=0&search=${encodeURI(listName)}`)
+        return await this.axios.get(`/v1/spotter/list?limit=1&offset=0&search=${encodeURI(listName)}`);
+    }
+
+    async createList(listName: string) {
+        return await this.axios.post(`/v1/spotter/list?operator=SampleOp`, {
+            "name": `${listName}`,
+            "priority": 1,
+            "match_threshold": 0.7,
+            "notes": ""
+          }
+        );
+    };
+
+    async createPerson(person: FacePerson) {
+        return await this.axios.post(`/v1/spotter/person?action=create&operator=SampleOp`, person)
+    };
+
+    async addPersonImage(id: number,imageId: ImageID) {
+        return await this.axios.post(`/v1/spotter/person/${id}?action=add_face&operator=SampleOp`, imageId)
     }
 
     async startSession() {
@@ -63,14 +81,10 @@ class AxiosCustom {
     } 
 };
 
-export async function addImage(conf: Conf, files: string[]) {
+export async function uploadSession(conf: Conf, files: string[]) {
     try {
         let uploadedFilesInfo = new Map();
         let _axios = new AxiosCustom(conf.ip, conf.port);
-        let listName = await _axios.getLists(conf.list_name);
-        if (listName.status != 200) {
-            return `${listName.status}: ${listName.statusText}`
-        };
 
         let startSession = await _axios.startSession();
         let sessionId = startSession.data.id;
@@ -87,7 +101,7 @@ export async function addImage(conf: Conf, files: string[]) {
                 if (uploadJob.status != 201) {
                     console.log(`${uploadJob.status}: ${uploadJob.statusText}`);
                 };
-                uploadedFilesInfo.set(path.basename(file), exifInfo);
+                uploadedFilesInfo.set(path.basename(file), {path: path.dirname(file), file: path.basename(file), ...exifInfo});
                 console.log(`${uploadJob.status}: ${uploadJob.statusText}`);
             } else {
                 let { exifInfo, imageBuf } = await exifReader(file);
@@ -96,7 +110,7 @@ export async function addImage(conf: Conf, files: string[]) {
                 if (uploadJob.status != 201) {
                     console.log(`${uploadJob.status}: ${uploadJob.statusText}`);
                 };
-                uploadedFilesInfo.set(path.basename(file), exifInfo);
+                uploadedFilesInfo.set(path.basename(file), {path: path.dirname(file), file: path.basename(file), ...exifInfo});
                 console.log(`${uploadJob.status}: ${uploadJob.statusText}`);
             };
         };
@@ -108,10 +122,62 @@ export async function addImage(conf: Conf, files: string[]) {
 
         let checkStatus = await _axios.getSessionStatus(sessionId);
         if (checkStatus?.status == 200 && checkStatus.data.state == 'completed') {
-            console.log(uploadedFilesInfo);
+            // console.log(uploadedFilesInfo);
+            let sessionArr = [];
             for (let item of checkStatus.data.items) {
                 let status = await _axios.getItemStatus(item.id);
-                console.log(status.status, status.data);
+                // console.log(status.status, status.data);
+                if (status.data.faces.length != 0) {
+                    sessionArr.push(status.data);
+                }
+            }
+            
+            let listId: string;
+            let getList = await _axios.getLists(conf.list_name);
+            // console.log(getList.data);
+            if (getList.status != 200) {
+                return `${getList.status}: ${getList.statusText}`
+            };
+            if (getList.data.lists.length == 0) {
+                getList = await _axios.createList(conf.list_name);
+                if (getList.status != 201) {
+                    return `${getList.status}: ${getList.statusText}`
+                }
+                listId = getList.data.id;
+            }
+            else {
+                listId = getList.data.lists[0].id;
+            };
+            console.log('ListID:', listId);
+            
+
+            for (let res of sessionArr) {
+                let notes = uploadedFilesInfo.get(res.source);
+                let i = 1;
+                for (let face of res.faces) {
+                    // console.log(face);
+                    if (face.passed_filters) {
+                        let person: FacePerson = {
+                            "first_name": `${notes.file}_${i}`,
+                            "list_id": Number(listId),
+                            "notes": JSON.stringify(notes)
+                        }
+                        let createP = await _axios.createPerson(person);
+                        if (createP.status != 201) {
+                            console.log(`${createP.status}: ${createP.statusText}`);
+                        }
+                        // console.log('Person', createP.data.id);
+                        // console.log(face.face_image.id);
+                        let addPImage = await _axios.addPersonImage(createP.data.id, {
+                            "face_id": face.face_image.id
+                        });
+                        if (addPImage.status != 201) {
+                            console.log(`${addPImage.status}: ${addPImage.statusText}`);
+                        }
+                        console.log(`${addPImage.status}: ${addPImage.statusText}`);
+                        i++;
+                    }
+                }
             }
         }
     }
@@ -119,3 +185,4 @@ export async function addImage(conf: Conf, files: string[]) {
         if (err) console.log(err);
     }
 }
+

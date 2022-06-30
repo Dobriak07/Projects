@@ -56,6 +56,7 @@ function readConfig() {
         catch (err) {
             if (err)
                 return 'bad';
+            return 'bad';
         }
     });
 }

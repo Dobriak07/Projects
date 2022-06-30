@@ -3,12 +3,10 @@ import { Prompt } from "./core/prompt/prompt.service";
 import { checkIP, checkPath, checkPort, checkFaceListName } from './helpers/promt.check'
 import { scanDir } from "./helpers/fs.scan";
 import { printMessage } from "./core/console/console.log.service";
-import { exifReader } from './core/exif/exif.service';
 import { Conf } from './core/types/myTypes';
 import { DirScan } from "./core/types/myTypes";
-import path from "node:path";
-import { gmConvert } from "./core/imageconverter/convert_service";
-import { addImage } from "./core/facex/facexapi";
+import { uploadSession } from "./core/facex/facexapi";
+import { pg } from "./core/db/pg.service";
 
 const START_OPTIONS  = {
     setup: 'Настроить модуль',
@@ -39,7 +37,7 @@ async function startCLI() {
                 validate: checkIP
             },
             {
-                type: 'input',
+                type: 'number',
                 name: 'port',
                 message: 'Введите порт сервера FaceX',
                 default: '21093',
@@ -51,6 +49,32 @@ async function startCLI() {
                 message: 'Введите имя Контрольного списка FaceX',
                 default: 'Image_scan',
                 validate: checkFaceListName
+            },
+            {
+                type: 'input',
+                name: 'pg_ip',
+                message: 'Введите IP-адрес PostgreSQL',
+                default: '127.0.0.1',
+                validate: checkIP
+            },
+            {
+                type: 'number',
+                name: 'pg_port',
+                message: 'Введите порт PostgreSQL',
+                default: '5432',
+                validate: checkPort
+            },
+            {
+                type: 'input',
+                name: 'pg_login',
+                message: 'Введите логин PostgreSQL',
+                default: 'postgres',
+            },
+            {
+                type: 'input',
+                name: 'pg_password',
+                message: 'Введите пароль PostgreSQL',
+                default: 'postgres',
             },
             {
                 type: 'input',
@@ -71,11 +95,18 @@ async function startCLI() {
         startCLI();
     } else {
         let conf = await readConfig();
-        if (conf == 'bad') {
+        if (conf == 'bad' || typeof conf == 'string') {
             console.log('Ошибка загрузки из конфигурационного файла');
             startCLI();
         }
-        main(conf);
+        else if (!conf) {
+            console.log('No config');
+        }
+        else {
+            let pgRes = await pg(conf);
+            console.log(pgRes);
+        }
+        // main(conf);
     } 
 }
 
@@ -83,7 +114,7 @@ async function main(conf: Conf, dirPath?: string) {
     try {
         let res: DirScan | undefined = dirPath ? await scanDir(conf, dirPath) : await scanDir(conf);
         if (res?.files.length != 0 && res?.files) {
-            await addImage(conf, res.files);
+            await uploadSession(conf, res.files);
         }
         if (res?.dirs.length != 0 && res?.dirs) {
             for (let dir of res.dirs) {

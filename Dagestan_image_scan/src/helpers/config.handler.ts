@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import { Conf } from '../core/types/myTypes';
 
 const CONFIG_PATH: string = './config';
 const CONFIG_FILE: string = 'config.json';
@@ -27,13 +28,14 @@ export async function saveConfig(conf: Object) {
     }
 }
 
-export async function readConfig() {
+export async function readConfig(): Promise<string | Conf> {
     try {
         let file = (await fs.promises.readFile(path.join(CONFIG_PATH, CONFIG_FILE))).toString();
-        let config = JSON.parse(file);
+        let config: Conf = JSON.parse(file);
         return config;
     }
     catch (err) {
         if (err) return 'bad';
+        return 'bad';
     }
 }

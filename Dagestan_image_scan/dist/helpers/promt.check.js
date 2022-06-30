@@ -16,6 +16,9 @@ function checkIP(ip) {
 }
 exports.checkIP = checkIP;
 function checkPort(port) {
+    if (typeof port != 'number') {
+        return 'Ошибка ввода, введите число';
+    }
     if (port === 0 || port === undefined) {
         return 'Введен некорректный порт';
     }

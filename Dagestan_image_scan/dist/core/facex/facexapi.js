@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.addImage = void 0;
+exports.uploadSession = void 0;
 const axios_1 = __importDefault(require("axios"));
 const form_data_1 = __importDefault(require("form-data"));
 const node_path_1 = __importDefault(require("node:path"));
@@ -33,6 +33,28 @@ class AxiosCustom {
     getLists(listName) {
         return __awaiter(this, void 0, void 0, function* () {
             return yield this.axios.get(`/v1/spotter/list?limit=1&offset=0&search=${encodeURI(listName)}`);
+        });
+    }
+    createList(listName) {
+        return __awaiter(this, void 0, void 0, function* () {
+            return yield this.axios.post(`/v1/spotter/list?operator=SampleOp`, {
+                "name": `${listName}`,
+                "priority": 1,
+                "match_threshold": 0.7,
+                "notes": ""
+            });
+        });
+    }
+    ;
+    createPerson(person) {
+        return __awaiter(this, void 0, void 0, function* () {
+            return yield this.axios.post(`/v1/spotter/person?action=create&operator=SampleOp`, person);
+        });
+    }
+    ;
+    addPersonImage(id, imageId) {
+        return __awaiter(this, void 0, void 0, function* () {
+            return yield this.axios.post(`/v1/spotter/person/${id}?action=add_face&operator=SampleOp`, imageId);
         });
     }
     startSession() {
@@ -80,16 +102,11 @@ class AxiosCustom {
     }
 }
 ;
-function addImage(conf, files) {
+function uploadSession(conf, files) {
     return __awaiter(this, void 0, void 0, function* () {
         try {
             let uploadedFilesInfo = new Map();
             let _axios = new AxiosCustom(conf.ip, conf.port);
-            let listName = yield _axios.getLists(conf.list_name);
-            if (listName.status != 200) {
-                return `${listName.status}: ${listName.statusText}`;
-            }
-            ;
             let startSession = yield _axios.startSession();
             let sessionId = startSession.data.id;
             if (startSession.status != 201) {
@@ -106,7 +123,7 @@ function addImage(conf, files) {
                         console.log(`${uploadJob.status}: ${uploadJob.statusText}`);
                     }
                     ;
-                    uploadedFilesInfo.set(node_path_1.default.basename(file), exifInfo);
+                    uploadedFilesInfo.set(node_path_1.default.basename(file), Object.assign({ path: node_path_1.default.dirname(file), file: node_path_1.default.basename(file) }, exifInfo));
                     console.log(`${uploadJob.status}: ${uploadJob.statusText}`);
                 }
                 else {
@@ -117,7 +134,7 @@ function addImage(conf, files) {
                         console.log(`${uploadJob.status}: ${uploadJob.statusText}`);
                     }
                     ;
-                    uploadedFilesInfo.set(node_path_1.default.basename(file), exifInfo);
+                    uploadedFilesInfo.set(node_path_1.default.basename(file), Object.assign({ path: node_path_1.default.dirname(file), file: node_path_1.default.basename(file) }, exifInfo));
                     console.log(`${uploadJob.status}: ${uploadJob.statusText}`);
                 }
                 ;
@@ -129,10 +146,61 @@ function addImage(conf, files) {
             }
             let checkStatus = yield _axios.getSessionStatus(sessionId);
             if ((checkStatus === null || checkStatus === void 0 ? void 0 : checkStatus.status) == 200 && checkStatus.data.state == 'completed') {
-                console.log(uploadedFilesInfo);
+                // console.log(uploadedFilesInfo);
+                let sessionArr = [];
                 for (let item of checkStatus.data.items) {
                     let status = yield _axios.getItemStatus(item.id);
-                    console.log(status.status, status.data);
+                    // console.log(status.status, status.data);
+                    if (status.data.faces.length != 0) {
+                        sessionArr.push(status.data);
+                    }
+                }
+                let listId;
+                let getList = yield _axios.getLists(conf.list_name);
+                // console.log(getList.data);
+                if (getList.status != 200) {
+                    return `${getList.status}: ${getList.statusText}`;
+                }
+                ;
+                if (getList.data.lists.length == 0) {
+                    getList = yield _axios.createList(conf.list_name);
+                    if (getList.status != 201) {
+                        return `${getList.status}: ${getList.statusText}`;
+                    }
+                    listId = getList.data.id;
+                }
+                else {
+                    listId = getList.data.lists[0].id;
+                }
+                ;
+                console.log('ListID:', listId);
+                for (let res of sessionArr) {
+                    let notes = uploadedFilesInfo.get(res.source);
+                    let i = 1;
+                    for (let face of res.faces) {
+                        // console.log(face);
+                        if (face.passed_filters) {
+                            let person = {
+                                "first_name": `${notes.file}_${i}`,
+                                "list_id": Number(listId),
+                                "notes": JSON.stringify(notes)
+                            };
+                            let createP = yield _axios.createPerson(person);
+                            if (createP.status != 201) {
+                                console.log(`${createP.status}: ${createP.statusText}`);
+                            }
+                            // console.log('Person', createP.data.id);
+                            // console.log(face.face_image.id);
+                            let addPImage = yield _axios.addPersonImage(createP.data.id, {
+                                "face_id": face.face_image.id
+                            });
+                            if (addPImage.status != 201) {
+                                console.log(`${addPImage.status}: ${addPImage.statusText}`);
+                            }
+                            console.log(`${addPImage.status}: ${addPImage.statusText}`);
+                            i++;
+                        }
+                    }
                 }
             }
         }
@@ -142,4 +210,4 @@ function addImage(conf, files) {
         }
     });
 }
-exports.addImage = addImage;
+exports.uploadSession = uploadSession;

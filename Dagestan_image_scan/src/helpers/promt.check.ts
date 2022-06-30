@@ -10,6 +10,9 @@ export function checkIP(ip: string) {
 }
 
 export function checkPort(port: number) {
+    if (typeof port != 'number') {
+        return 'Ошибка ввода, введите число';
+    }
     if(port === 0 || port === undefined) {
         return 'Введен некорректный порт';
     } else {
