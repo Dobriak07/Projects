@@ -9,38 +9,25 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.pg = void 0;
+exports.createDB = void 0;
 const pg_1 = require("pg");
-const createDB_1 = require("./createDB");
-const createTable_1 = require("./createTable");
-function pg(conf) {
+function createDB(conf) {
     return __awaiter(this, void 0, void 0, function* () {
-        console.log('Tut');
         const pool = new pg_1.Pool({
             host: conf.pg_ip,
             port: conf.pg_port,
             user: conf.pg_login,
             password: conf.pg_password,
-            database: 'dagestan_face_scan'
+            database: 'postgres'
         });
         try {
-            let checkTables = yield (0, createTable_1.createTable)(conf);
-            console.log(checkTables);
-            return pool;
+            yield pool.query('CREATE DATABASE dagestan_face_scan');
+            yield pool.end();
         }
-        catch (err) {
-            if (typeof err == 'string') {
-                console.log(err);
-            }
-            if (err instanceof Error) {
-                console.log(err.message);
-                if (err.message.includes('dagestan_face_scan')) {
-                    yield (0, createDB_1.createDB)(conf);
-                    yield (0, createTable_1.createTable)(conf);
-                    return pg(conf);
-                }
-            }
+        catch (e) {
+            console.log(e);
+            yield pool.end();
         }
     });
 }
-exports.pg = pg;
+exports.createDB = createDB;

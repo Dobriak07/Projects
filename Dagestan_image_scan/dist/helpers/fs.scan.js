@@ -15,26 +15,18 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.scanDir = void 0;
 const fs_1 = __importDefault(require("fs"));
 const path_1 = __importDefault(require("path"));
-function scanDir(conf, dir) {
+function scanDir(conf, dirPath) {
     return __awaiter(this, void 0, void 0, function* () {
         const EXTENSIONS = conf.extensions;
-        let dirPath = '';
-        if (dir) {
-            dirPath = dir;
-        }
-        else {
-            dirPath = conf.path;
-        }
-        ;
         let result = { dirs: [], files: [] };
         try {
             let dir = yield fs_1.default.promises.readdir(path_1.default.normalize(dirPath));
             dir.forEach((el) => {
                 if (fs_1.default.statSync(path_1.default.join(dirPath, el)).isDirectory()) {
-                    result.dirs.push(path_1.default.join(dirPath, el));
+                    result.dirs.push(path_1.default.join(dirPath, el).split(path_1.default.sep).join('/'));
                 }
                 else if (EXTENSIONS.includes(path_1.default.extname(el))) {
-                    result.files.push(path_1.default.join(dirPath, el));
+                    result.files.push(path_1.default.join(dirPath, el).split(path_1.default.sep).join('/'));
                 }
             });
             return result;

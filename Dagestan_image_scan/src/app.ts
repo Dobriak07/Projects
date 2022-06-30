@@ -1,121 +1,51 @@
-import { checkConfig, readConfig, saveConfig } from "./helpers/config.handler";
-import { Prompt } from "./core/prompt/prompt.service";
-import { checkIP, checkPath, checkPort, checkFaceListName } from './helpers/promt.check'
 import { scanDir } from "./helpers/fs.scan";
 import { printMessage } from "./core/console/console.log.service";
-import { Conf } from './core/types/myTypes';
+import { Conf, RowFile } from './core/types/myTypes';
 import { DirScan } from "./core/types/myTypes";
-import { uploadSession } from "./core/facex/facexapi";
+import { uploadSession } from "./core/facex/facexSession";
 import { pg } from "./core/db/pg.service";
+import path from 'path';
+import { startCLI } from "./core/prompt/prompt.service";
+import { pgLog } from "./core/db/pgwrite";
 
-const START_OPTIONS  = {
-    setup: 'Настроить модуль',
-    execute: 'Запустить модуль'
-};
-
-const prompt = new Prompt();
-
-startCLI();
-
-async function startCLI() {
-    await checkConfig();
-    let { answer } = await prompt.input([
-        {
-            type: 'list',
-            name: 'answer',
-            message: 'Выберите действие',
-            choices: [START_OPTIONS.execute, START_OPTIONS.setup]
-        }
-    ]);
-    if(answer === START_OPTIONS.setup) {
-        let input = await prompt.input([
-            {
-                type: 'input',
-                name: 'ip',
-                message: 'Введите IP-адрес сервера FaceX',
-                default: '127.0.0.1',
-                validate: checkIP
-            },
-            {
-                type: 'number',
-                name: 'port',
-                message: 'Введите порт сервера FaceX',
-                default: '21093',
-                validate: checkPort
-            },
-            {
-                type: 'input',
-                name: 'list_name',
-                message: 'Введите имя Контрольного списка FaceX',
-                default: 'Image_scan',
-                validate: checkFaceListName
-            },
-            {
-                type: 'input',
-                name: 'pg_ip',
-                message: 'Введите IP-адрес PostgreSQL',
-                default: '127.0.0.1',
-                validate: checkIP
-            },
-            {
-                type: 'number',
-                name: 'pg_port',
-                message: 'Введите порт PostgreSQL',
-                default: '5432',
-                validate: checkPort
-            },
-            {
-                type: 'input',
-                name: 'pg_login',
-                message: 'Введите логин PostgreSQL',
-                default: 'postgres',
-            },
-            {
-                type: 'input',
-                name: 'pg_password',
-                message: 'Введите пароль PostgreSQL',
-                default: 'postgres',
-            },
-            {
-                type: 'input',
-                name: 'path',
-                message: 'Укажите путь до папки для сканирования',
-                validate: checkPath
-            },
-            {
-                type: 'checkbox',
-                name: 'extensions',
-                message: 'Выберите расширения файлов для сканирования',
-                default: ['.jpg', '.jpeg'],
-                choices: ['.jpg', '.jpeg', '.png', '.tiff', '.heic', '.heif']
-            }
-        ]);
-        console.log(input);
-        await saveConfig(input);
-        startCLI();
-    } else {
-        let conf = await readConfig();
-        if (conf == 'bad' || typeof conf == 'string') {
-            console.log('Ошибка загрузки из конфигурационного файла');
-            startCLI();
-        }
-        else if (!conf) {
-            console.log('No config');
-        }
-        else {
-            let pgRes = await pg(conf);
-            console.log(pgRes);
-        }
-        // main(conf);
-    } 
+async function app() {
+    let conf = await startCLI();
+    main(conf);
 }
+
+app();
 
 async function main(conf: Conf, dirPath?: string) {
     try {
-        let res: DirScan | undefined = dirPath ? await scanDir(conf, dirPath) : await scanDir(conf);
+        let dirScan:string = dirPath ? dirPath : conf.path;
+        let pool = await pg(conf);
+        // let client = await pool?.connect();
+        let res: DirScan | undefined = await scanDir(conf, dirScan);
+        console.log(dirScan.split(path.sep).join('/'));
+        let processedFiles = await pool?.query(`SELECT file FROM log WHERE status=1 AND path='${dirScan.split(path.sep).join('/')}';`);
+        let _files = checkRows(processedFiles?.rows);
+       
+        console.log(_files);
         if (res?.files.length != 0 && res?.files) {
-            await uploadSession(conf, res.files);
+            let filesNew: string[] = [];
+            for (let file of res.files) {
+                if (!_files.includes(path.basename(file))) filesNew.push(file);
+            }
+
+            console.log(filesNew);
+            if (filesNew.length != 0) {
+                let uploadRes = await uploadSession(conf, filesNew);
+                if(typeof uploadRes == 'string') {
+                    console.log('Returned string');
+                    await pool?.end();
+                } 
+                else if (uploadRes) {
+                    await pgLog(uploadRes, pool);
+                }
+            }
         }
+        await pool?.end();
+
         if (res?.dirs.length != 0 && res?.dirs) {
             for (let dir of res.dirs) {
                 printMessage(`Switching to ${dir}`);
@@ -126,4 +56,12 @@ async function main(conf: Conf, dirPath?: string) {
     catch (err) {
         if (err) console.log(err);
     }
+}
+
+function checkRows(rows: RowFile[] | any) {
+    let files: string[] = [];
+    for (let row of rows) {
+        files.push(row.file);
+    }
+    return files;
 }

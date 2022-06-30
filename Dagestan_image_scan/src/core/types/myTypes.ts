@@ -16,14 +16,24 @@ export type DirScan = {
 }
 
 export type FacePerson = {
-    "first_name"?: string,
-    "middle_name"?: string,
+    "first_name": string,
+    "middle_name": string,
     "last_name"?: string,
-    "notes"?: string,
+    "notes": string,
     "external_id"?: string,
     "list_id": number
 }
 
+export type FaceFindPerson = {
+    "first_name": string,
+    "middle_name": string,
+    "last_name"?: string
+}
+
 export type ImageID = {
     "face_id": number
+}
+
+export type RowFile = {
+    file: string
 }
