@@ -23,10 +23,13 @@ function createDB(conf) {
         try {
             yield pool.query('CREATE DATABASE dagestan_face_scan');
             yield pool.end();
+            return 'БД создана';
         }
-        catch (e) {
-            console.log(e);
-            yield pool.end();
+        catch (err) {
+            if (err) {
+                yield pool.end();
+                throw err;
+            }
         }
     });
 }

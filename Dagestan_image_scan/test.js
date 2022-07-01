@@ -1,4 +1,25 @@
-const path = require('path');
-const dir = 'D:\\test_dagestan\\images';
+const _progress = require('cli-progress');
+const _colors = require('ansi-colors');
 
-console.log(path(dir));
+// helper function to display preset
+function showPreset(name, pos){
+    console.log(_colors.magenta('Preset: ' + name));
+
+    // create a new progress bar with preset
+    const bar = new _progress.Bar({
+        align: pos
+    }, _progress.Presets[name] || _progress.Presets.legacy);
+    bar.start(200, 0);
+
+    // random value 1..200
+    bar.update(Math.floor((Math.random() * 200) + 1));
+    bar.stop();
+    console.log('');
+}
+
+console.log('');
+showPreset('legacy', 'center');
+showPreset('shades_classic', 'right');
+showPreset('shades_grey', 'left');
+showPreset('rect', 'center');
+showPreset('bottom', 'bottom');

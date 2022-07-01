@@ -1,1 +1,18 @@
-{"ip":"127.0.0.1","port":21093,"list_name":"Image_scan","pg_ip":"127.0.0.1","pg_port":5432,"pg_login":"postgres","pg_password":"postgres","path":"D:\\test_dagestan\\images","extensions":[".jpg",".jpeg",".png",".tiff",".heic",".heif"]}
+{
+    "ip": "127.0.0.1",
+    "port": 21093,
+    "list_name": "Image_scan",
+    "pg_ip": "127.0.0.1",
+    "pg_port": 5432,
+    "pg_login": "postgres",
+    "pg_password": "postgres",
+    "path": "D:\\Photo",
+    "extensions": [
+        ".jpg",
+        ".jpeg",
+        ".png",
+        ".tiff",
+        ".heic",
+        ".heif"
+    ]
+}

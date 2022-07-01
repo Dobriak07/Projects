@@ -18,14 +18,15 @@ class Prompt {
 
 export async function startCLI(): Promise<any> {
         try {
-            console.log('prompt');
             const prompt = new Prompt();
-            await checkConfig();
+            let configCheck = await checkConfig();
+            console.log(configCheck);
             let { answer } = await prompt.input(promptStart);
             if(answer === START_OPTIONS.setup) {
                 let input = await prompt.input(promptQuestions);
                 console.log(input);
-                await saveConfig(input);
+                let configSave = await saveConfig(input);
+                console.log(configSave);
                 return(startCLI());
             } else {
                 let conf = await readConfig();
@@ -34,8 +35,7 @@ export async function startCLI(): Promise<any> {
                     return(startCLI());
                 }
                 else if (!conf) {
-                    console.log('No config');
-                    
+                    console.log('Конфигурационный файл не найден');
                 }
                 else {
                     let conf = await readConfig();
@@ -43,7 +43,7 @@ export async function startCLI(): Promise<any> {
                 }
             } 
         }
-        catch(e) {
-            console.log(e);
+        catch(err) {
+            throw err;
         }
 }

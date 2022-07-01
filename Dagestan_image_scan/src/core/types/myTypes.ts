@@ -1,3 +1,5 @@
+import { Configuration } from "log4js"
+
 export type Conf = {
     ip: string,
     port: string | number,
@@ -37,3 +39,5 @@ export type ImageID = {
 export type RowFile = {
     file: string
 }
+
+export type Log_Config = Configuration;

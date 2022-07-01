@@ -8,10 +8,10 @@ const CONFIG_FILE: string = 'config.json';
 export async function checkConfig() {
     try {
         await fs.promises.stat(path.join(CONFIG_PATH, CONFIG_FILE));
-        return console.log('Конфигурация найдена');
+        return 'Конфигурация найдена';
     }
     catch (err) {
-        if (err) return console.log('Конфигурация не найдена');
+        if (err) return('Конфигурация не найдена');
     }
 }
 
@@ -20,11 +20,11 @@ export async function saveConfig(conf: Object) {
         if (!fs.existsSync(CONFIG_PATH)) {
             await fs.promises.mkdir(CONFIG_PATH);
         }
-        await fs.promises.writeFile(path.join(CONFIG_PATH, CONFIG_FILE), JSON.stringify(conf));
-        return console.log('Конфигурация сохранена');
+        await fs.promises.writeFile(path.join(CONFIG_PATH, CONFIG_FILE), JSON.stringify(conf, null, 4));
+        return 'Конфигурация сохранена';
     }
     catch (err) {
-        if (err) return console.log('Ошибка сохранения конфигурации');
+        if (err) throw new Error('Ошибка сохранения конфигурации');
     }
 }
 

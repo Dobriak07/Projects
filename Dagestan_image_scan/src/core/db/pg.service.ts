@@ -1,10 +1,10 @@
 import { Pool } from 'pg';
+import { LoggerService } from '../logger/class.logger';
 import { Conf } from '../types/myTypes';
 import { createDB } from './createDB';
 import { createTable } from './createTable';
 
-export async function pg(conf:Conf): Promise<any> {
-    console.log('Tut');
+export async function pg(conf:Conf, logger: LoggerService): Promise<any> {
     const pool = new Pool({
         host: conf.pg_ip,
         port: conf.pg_port,
@@ -15,19 +15,29 @@ export async function pg(conf:Conf): Promise<any> {
     
     try {
         let checkTables = await createTable(conf);
-        console.log(checkTables);
+        if (checkTables) {
+            logger.debug(checkTables);
+        }
         return pool;
     }
     catch(err: unknown) {
         if (typeof err == 'string') {
-            console.log(err);
+            throw err;
         }
         if (err instanceof Error) {
-            console.log(err.message);
+            // console.log(err.message);
             if(err.message.includes('dagestan_face_scan')) {
-                await createDB(conf);
-                await createTable(conf);
-                return pg(conf);
+                try {
+                    let dbCreate = await createDB(conf);
+                    if (dbCreate) logger.debug(dbCreate);
+    
+                    let tableCreate = await createTable(conf);
+                    if (tableCreate) logger.debug(tableCreate);
+                    return pg(conf, logger);
+                }
+                catch(err) {
+                    throw err;
+                }
             }
         }
     }

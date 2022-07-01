@@ -1,0 +1,41 @@
+{
+    "appenders": {
+        "console": {
+            "type": "console",
+            "layout": {
+                "type": "pattern",
+                "pattern": "%d{yyyy-MM-dd hh:mm:ss.SSS} [%-5p] %m"
+            }
+        },
+        "file": {
+            "type": "file",
+            "filename": "./logs/app_scan.log",
+            "maxLogSize": "10M",
+            "backups": 5,
+            "layout": {
+                "type": "pattern",
+                "pattern": "%d{yyyy-MM-dd hh:mm:ss.SSS} [%-5p] %m"
+            }
+        }
+    },
+    "categories": {
+        "default": {
+            "appenders": [
+                "console"
+            ],
+            "level": "off"
+        },
+        "console": {
+            "appenders": [
+                "console"
+            ],
+            "level": "info"
+        },
+        "file": {
+            "appenders": [
+                "file"
+            ],
+            "level": "info"
+        }
+    }
+}

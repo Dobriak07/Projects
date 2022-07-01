@@ -1,6 +1,7 @@
 import axios, { AxiosInstance } from 'axios';
 import FormData from 'form-data';
 import path from 'node:path';
+import { CliBar } from '../cli/progress.bar';
 import { FaceFindPerson, FacePerson, ImageID } from '../types/myTypes';
 const delay = async (ms: number) => await new Promise(resolve => setTimeout(resolve, ms));
 
@@ -14,7 +15,7 @@ export class FaceX {
         this.port = port;
         this.axios = axios.create({
             baseURL: `http://${this.ip}:${this.port}/`,
-            timeout: 10000,
+            // timeout: 10000,
         })
     };
 
@@ -52,6 +53,10 @@ export class FaceX {
          return await this.axios.post('/v1/spotter/import/session');
     };
 
+    async deleteSession(sessionId: string) {
+        return await this.axios.delete(`/v1/spotter/import/session/${sessionId}`);
+   };
+
     async addImage(sessionId: string, filePath: string, buff: Buffer) {
         let form = new FormData();
         form.append('data', JSON.stringify({
@@ -69,16 +74,34 @@ export class FaceX {
     }
 
     async getSessionStatus(sessionId: string) {
-        let status = 'null';
-        let response;
-        while (status != 'completed') {
-            response = await this.axios.get(`/v1/spotter/import/session/${sessionId}`);
-            if(response.status == 200) {
-                status = response.data.state;
-                await delay(1000);
+        try {
+            let progressBar = new CliBar('Processing');
+            progressBar.start(0, 0);
+            let status = 'null';
+            let response;
+            while (status != 'completed') {
+                response = await this.axios.get(`/v1/spotter/import/session/${sessionId}`);
+                if(response.status == 200) {
+                    let i = 0;
+                    progressBar.setTotal(response.data.items.length);
+                    // console.log(response.data);
+                    for (const item of response.data.items) {
+                        if (item.state == 'ok') {
+                            i++;
+                        }
+                    }
+                    status = response.data.state;
+                    progressBar.update(i);
+                    await delay(1000);
+                }
+                
             }
+            progressBar.stop();
+            return response;
         }
-        return response;
+        catch(err) {
+            throw err;
+        }
     }
 
     async getItemStatus(itemId: string) {

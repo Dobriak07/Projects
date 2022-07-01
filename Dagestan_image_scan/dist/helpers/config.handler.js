@@ -21,11 +21,11 @@ function checkConfig() {
     return __awaiter(this, void 0, void 0, function* () {
         try {
             yield fs_1.default.promises.stat(path_1.default.join(CONFIG_PATH, CONFIG_FILE));
-            return console.log('Конфигурация найдена');
+            return 'Конфигурация найдена';
         }
         catch (err) {
             if (err)
-                return console.log('Конфигурация не найдена');
+                return ('Конфигурация не найдена');
         }
     });
 }
@@ -36,12 +36,12 @@ function saveConfig(conf) {
             if (!fs_1.default.existsSync(CONFIG_PATH)) {
                 yield fs_1.default.promises.mkdir(CONFIG_PATH);
             }
-            yield fs_1.default.promises.writeFile(path_1.default.join(CONFIG_PATH, CONFIG_FILE), JSON.stringify(conf));
-            return console.log('Конфигурация сохранена');
+            yield fs_1.default.promises.writeFile(path_1.default.join(CONFIG_PATH, CONFIG_FILE), JSON.stringify(conf, null, 4));
+            return 'Конфигурация сохранена';
         }
         catch (err) {
             if (err)
-                return console.log('Ошибка сохранения конфигурации');
+                throw new Error('Ошибка сохранения конфигурации');
         }
     });
 }

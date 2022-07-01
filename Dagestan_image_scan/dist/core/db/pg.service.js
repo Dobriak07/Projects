@@ -13,9 +13,8 @@ exports.pg = void 0;
 const pg_1 = require("pg");
 const createDB_1 = require("./createDB");
 const createTable_1 = require("./createTable");
-function pg(conf) {
+function pg(conf, logger) {
     return __awaiter(this, void 0, void 0, function* () {
-        console.log('Tut');
         const pool = new pg_1.Pool({
             host: conf.pg_ip,
             port: conf.pg_port,
@@ -25,19 +24,30 @@ function pg(conf) {
         });
         try {
             let checkTables = yield (0, createTable_1.createTable)(conf);
-            console.log(checkTables);
+            if (checkTables) {
+                logger.debug(checkTables);
+            }
             return pool;
         }
         catch (err) {
             if (typeof err == 'string') {
-                console.log(err);
+                throw err;
             }
             if (err instanceof Error) {
-                console.log(err.message);
+                // console.log(err.message);
                 if (err.message.includes('dagestan_face_scan')) {
-                    yield (0, createDB_1.createDB)(conf);
-                    yield (0, createTable_1.createTable)(conf);
-                    return pg(conf);
+                    try {
+                        let dbCreate = yield (0, createDB_1.createDB)(conf);
+                        if (dbCreate)
+                            logger.debug(dbCreate);
+                        let tableCreate = yield (0, createTable_1.createTable)(conf);
+                        if (tableCreate)
+                            logger.debug(tableCreate);
+                        return pg(conf, logger);
+                    }
+                    catch (err) {
+                        throw err;
+                    }
                 }
             }
         }

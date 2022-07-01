@@ -16,6 +16,7 @@ exports.FaceX = void 0;
 const axios_1 = __importDefault(require("axios"));
 const form_data_1 = __importDefault(require("form-data"));
 const node_path_1 = __importDefault(require("node:path"));
+const progress_bar_1 = require("../cli/progress.bar");
 const delay = (ms) => __awaiter(void 0, void 0, void 0, function* () { return yield new Promise(resolve => setTimeout(resolve, ms)); });
 class FaceX {
     constructor(ip, port) {
@@ -23,7 +24,7 @@ class FaceX {
         this.port = port;
         this.axios = axios_1.default.create({
             baseURL: `http://${this.ip}:${this.port}/`,
-            timeout: 10000,
+            // timeout: 10000,
         });
     }
     ;
@@ -70,6 +71,12 @@ class FaceX {
         });
     }
     ;
+    deleteSession(sessionId) {
+        return __awaiter(this, void 0, void 0, function* () {
+            return yield this.axios.delete(`/v1/spotter/import/session/${sessionId}`);
+        });
+    }
+    ;
     addImage(sessionId, filePath, buff) {
         return __awaiter(this, void 0, void 0, function* () {
             let form = new form_data_1.default();
@@ -90,16 +97,33 @@ class FaceX {
     }
     getSessionStatus(sessionId) {
         return __awaiter(this, void 0, void 0, function* () {
-            let status = 'null';
-            let response;
-            while (status != 'completed') {
-                response = yield this.axios.get(`/v1/spotter/import/session/${sessionId}`);
-                if (response.status == 200) {
-                    status = response.data.state;
-                    yield delay(1000);
+            try {
+                let progressBar = new progress_bar_1.CliBar('Processing');
+                progressBar.start(0, 0);
+                let status = 'null';
+                let response;
+                while (status != 'completed') {
+                    response = yield this.axios.get(`/v1/spotter/import/session/${sessionId}`);
+                    if (response.status == 200) {
+                        let i = 0;
+                        progressBar.setTotal(response.data.items.length);
+                        // console.log(response.data);
+                        for (const item of response.data.items) {
+                            if (item.state == 'ok') {
+                                i++;
+                            }
+                        }
+                        status = response.data.state;
+                        progressBar.update(i);
+                        yield delay(1000);
+                    }
                 }
+                progressBar.stop();
+                return response;
             }
-            return response;
+            catch (err) {
+                throw err;
+            }
         });
     }
     getItemStatus(itemId) {

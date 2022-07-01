@@ -13,9 +13,12 @@ export async function createDB(conf: Conf) {
     try {
         await pool.query('CREATE DATABASE dagestan_face_scan');
         await pool.end();
+        return 'БД создана';
     }
-    catch(e) {
-        console.log(e);
-        await pool.end();
+    catch(err) {
+        if (err) {
+            await pool.end();
+            throw err;
+        }
     }
 }

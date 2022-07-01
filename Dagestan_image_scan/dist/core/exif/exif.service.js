@@ -44,19 +44,24 @@ const promises_1 = require("node:fs/promises");
 function exifReader(filePath) {
     var _a, _b;
     return __awaiter(this, void 0, void 0, function* () {
-        let exifInfo = {
-            date: '',
-            latitude: '',
-            longitude: ''
-        };
-        let imageBuf = yield (0, promises_1.readFile)(filePath);
-        let metaData = ExifReader.load(imageBuf);
-        exifInfo.date = ((_a = metaData.DateTime) === null || _a === void 0 ? void 0 : _a.description) ? metaData.DateTime.description :
-            ((_b = metaData.DateCreated) === null || _b === void 0 ? void 0 : _b.value) ? metaData.DateCreated.value :
-                (yield (0, promises_1.stat)(filePath)).birthtime.toISOString();
-        exifInfo.latitude = metaData.GPSLatitude ? metaData.GPSLatitude.description : '';
-        exifInfo.longitude = metaData.GPSLongitude ? metaData.GPSLongitude.description : '';
-        return { exifInfo, imageBuf };
+        try {
+            let exifInfo = {
+                date: '',
+                latitude: '',
+                longitude: ''
+            };
+            let imageBuf = yield (0, promises_1.readFile)(filePath);
+            let metaData = ExifReader.load(imageBuf);
+            exifInfo.date = ((_a = metaData.DateTime) === null || _a === void 0 ? void 0 : _a.description) ? metaData.DateTime.description :
+                ((_b = metaData.DateCreated) === null || _b === void 0 ? void 0 : _b.value) ? metaData.DateCreated.value :
+                    (yield (0, promises_1.stat)(filePath)).birthtime.toISOString();
+            exifInfo.latitude = metaData.GPSLatitude ? metaData.GPSLatitude.description : '';
+            exifInfo.longitude = metaData.GPSLongitude ? metaData.GPSLongitude.description : '';
+            return { exifInfo, imageBuf };
+        }
+        catch (err) {
+            throw err;
+        }
     });
 }
 exports.exifReader = exifReader;

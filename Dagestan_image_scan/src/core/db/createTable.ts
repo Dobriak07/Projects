@@ -47,11 +47,11 @@ export async function createTable(conf: Conf) {
             ALTER TABLE public.log
                 OWNER to postgres;
         `));
-        
-        // console.log('Table', tableCreate);
+
         await pool.end();
+        return 'Таблица создана или существует';
     }
-    catch(e) {
-        if(e) throw e;
+    catch(err) {
+        if(err) throw err;
     }
 }

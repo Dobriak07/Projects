@@ -10,7 +10,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.pgLog = void 0;
-function pgLog(results, pool) {
+function pgLog(results, pool, logger) {
     return __awaiter(this, void 0, void 0, function* () {
         try {
             let errStatus = ['no_face', 'upload_problem'];
@@ -18,20 +18,27 @@ function pgLog(results, pool) {
             for (const [key, value] of results) {
                 if (errStatus.includes(value.status)) {
                     let res = yield (pool === null || pool === void 0 ? void 0 : pool.query(`INSERT INTO log (file, path, date, status, success_info, error_info) VALUES ($1, $2, $3, $4, $5, $6);`, [value.file, value.path, (new Date()).toISOString(), value.code, JSON.stringify(value), value.status]));
+                    logger.debug(`${key} сохранен в БД`);
                     results.delete(key);
                 }
                 else {
                     let res = yield (pool === null || pool === void 0 ? void 0 : pool.query(`INSERT INTO log (file, path, date, status, success_info) VALUES ($1, $2, $3, $4, $5);`, [value.file, value.path, (new Date()).toISOString(), value.code, JSON.stringify(value)]));
+                    logger.debug(`${key} сохранен в БД`);
                     results.delete(key);
                 }
             }
             // @ts-ignore-stop
         }
-        catch (e) {
-            if (results.size != 0) {
-                yield pgLog(results, pool);
+        catch (err) {
+            if (err) {
+                if (results.size != 0) {
+                    let files = [...results.keys()];
+                    throw new Error(`Не удалось записать в БД файлы: ${files}`);
+                }
+                else {
+                    throw err;
+                }
             }
-            console.log(e);
         }
     });
 }

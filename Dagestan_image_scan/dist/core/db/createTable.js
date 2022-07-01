@@ -59,12 +59,12 @@ function createTable(conf) {
             ALTER TABLE public.log
                 OWNER to postgres;
         `));
-            // console.log('Table', tableCreate);
             yield pool.end();
+            return 'Таблица создана или существует';
         }
-        catch (e) {
-            if (e)
-                throw e;
+        catch (err) {
+            if (err)
+                throw err;
         }
     });
 }
