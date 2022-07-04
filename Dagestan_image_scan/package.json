@@ -3,13 +3,14 @@
   "version": "1.0.0",
   "main": "./index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "exe": "pkg -t node16-win-x64 -o .\\exe\\image_scan .\\dist\\app.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "@supercharge/promise-pool": "^2.3.0",
     "@types/cli-progress": "^3.11.0",
     "@types/dedent": "^0.7.0",
     "@types/gm": "^1.18.12",

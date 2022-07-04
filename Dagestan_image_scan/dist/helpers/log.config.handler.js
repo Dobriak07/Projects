@@ -19,7 +19,7 @@ const CONFIG_PATH = './config';
 const CONFIG_FILE = 'log_config.json';
 const DEFAULT_CONFIG = {
     appenders: {
-        console: { type: 'console', layout: { type: 'pattern', pattern: '%d{yyyy-MM-dd hh:mm:ss.SSS} [%-5p] %m' } },
+        console: { type: 'console', layout: { type: 'pattern', pattern: '%d{yyyy-MM-dd hh:mm:ss.SSS} %[[%-5p]%] %m' } },
         file: { type: 'file', filename: './logs/app_scan.log', maxLogSize: '10M', backups: 5, layout: { type: 'pattern', pattern: '%d{yyyy-MM-dd hh:mm:ss.SSS} [%-5p] %m' } }
     },
     categories: {

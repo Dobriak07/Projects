@@ -105,6 +105,10 @@ function startOnGoodConfig() {
                 }
             }));
         }
+        else if (configCheck == 'Конфигурация не найдена') {
+            let conf = yield startCLI();
+            return { start: 3, conf: conf };
+        }
     });
 }
 exports.startOnGoodConfig = startOnGoodConfig;

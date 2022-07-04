@@ -36,6 +36,11 @@ function app() {
                 const logger = new class_logger_1.LoggerService(loggerConf);
                 loopMain(start === null || start === void 0 ? void 0 : start.conf, logger);
             }
+            else if ((start === null || start === void 0 ? void 0 : start.start) == 3) {
+                const loggerConf = yield (0, log_config_handler_1.logConfig)();
+                const logger = new class_logger_1.LoggerService(loggerConf);
+                loopMain(start === null || start === void 0 ? void 0 : start.conf, logger);
+            }
         }
         catch (err) {
             if (err) {
@@ -106,11 +111,9 @@ function main(conf, logger, dirPath) {
         }
         catch (err) {
             if (err instanceof Error) {
-                console.log('Tut');
                 logger.error(err.message);
             }
             else if (typeof err == 'string') {
-                console.log('Tut');
                 logger.error(err);
             }
         }

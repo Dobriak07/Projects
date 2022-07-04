@@ -88,4 +88,8 @@ export async function startOnGoodConfig(): Promise<undefined | {start: number, c
             }
         })
     }
+    else if (configCheck == 'Конфигурация не найдена') {
+        let conf = await startCLI();
+        return {start: 3, conf: conf};
+    }
 }

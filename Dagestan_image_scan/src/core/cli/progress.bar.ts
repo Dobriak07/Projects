@@ -1,12 +1,27 @@
 import * as Bar from 'cli-progress';
 import colors from 'ansi-colors';
 
-export type BarType = 'Uploading' | 'Processing' | 'Add person';
+export type BarType = 'Uploading' | 'Processing' | 'Add person' | 'Progress';
 
 export class CliBar {
     bar: Bar.SingleBar;
     constructor(name: BarType) {
         switch (name) {
+            case 'Progress':
+                this.bar = new Bar.SingleBar({
+                    format: name + '  | ' + colors.green('{bar}') + ' | {percentage}% || {value}/{total} file(s) |',
+                    barCompleteChar: '#',
+                    barIncompleteChar: '_',
+                    barsize: 50,
+                    // hideCursor: true,
+                    clearOnComplete: true,
+                    stopOnComplete: true,
+                    // synchronousUpdate: true,
+                    // forceRedraw: true,
+                    // fps: 5,
+                    // stream: process.stdout
+                })
+                break;
             case 'Uploading':
                 this.bar = new Bar.SingleBar({
                     format: name + '  | ' + colors.green('{bar}') + ' | {percentage}% || {value}/{total} file(s) |',

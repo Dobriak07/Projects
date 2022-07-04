@@ -24,6 +24,11 @@ async function app() {
             const logger = new LoggerService(loggerConf);
             loopMain(start?.conf as Conf, logger);
         }
+        else if(start?.start == 3) {
+            const loggerConf = await logConfig();
+            const logger = new LoggerService(loggerConf);
+            loopMain(start?.conf as Conf, logger);
+        }
     }
     catch(err: any) {
         if (err) {
@@ -95,11 +100,9 @@ async function main(conf: Conf, logger: LoggerService, dirPath?: string) {
     }
     catch (err: unknown) {
         if (err instanceof Error) {
-            console.log('Tut');
             logger.error(err.message);
         }
         else if (typeof err == 'string' ){
-            console.log('Tut');
             logger.error(err);
         }
     }
