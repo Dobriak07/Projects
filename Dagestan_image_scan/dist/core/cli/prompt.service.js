@@ -12,10 +12,12 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.startCLI = void 0;
+exports.startOnGoodConfig = exports.startCLI = void 0;
 const inquirer_1 = __importDefault(require("inquirer"));
 const config_handler_1 = require("../../helpers/config.handler");
 const promt_options_1 = require("./promt.options");
+const readline_1 = __importDefault(require("readline"));
+const delay = (ms) => __awaiter(void 0, void 0, void 0, function* () { return yield new Promise(resolve => setTimeout(resolve, ms)); });
 class Prompt {
     constructor() {
         this.bottomBar = new inquirer_1.default.ui.BottomBar();
@@ -63,3 +65,46 @@ function startCLI() {
     });
 }
 exports.startCLI = startCLI;
+function startOnGoodConfig() {
+    return __awaiter(this, void 0, void 0, function* () {
+        let configCheck = yield (0, config_handler_1.checkConfig)();
+        let conf = yield (0, config_handler_1.readConfig)();
+        if (configCheck == 'Конфигурация найдена') {
+            console.log('Конфигурация найдена');
+            // console.log('Start in 10 sec');
+            return new Promise((resolve, reject) => __awaiter(this, void 0, void 0, function* () {
+                let status = 0;
+                readline_1.default.emitKeypressEvents(process.stdin);
+                // let start = setTimeout(() => {
+                //     resolve({start: 0, conf: conf});
+                // }, 5000);
+                process.stdin.setRawMode(true);
+                process.stdin.on('keypress', (str, key) => {
+                    if (key.ctrl && key.name === 'c') {
+                        process.exit();
+                    }
+                    else {
+                        // clearTimeout(start);
+                        status = 1;
+                        resolve({ start: 1, conf: conf });
+                    }
+                });
+                let i = 10;
+                while (i != 0 && status == 0) {
+                    process.stdout.write(`Start in ${i} sec. Press any key to cancell   \r`);
+                    // console.log(`Start in ${i} sec. Press any key to cancell`);
+                    yield delay(1000);
+                    i--;
+                    // console.clear();
+                }
+                if (status == 0) {
+                    process.stdin.setRawMode(false);
+                    process.stdin.destroy();
+                    ;
+                    resolve({ start: 0, conf: conf });
+                }
+            }));
+        }
+    });
+}
+exports.startOnGoodConfig = startOnGoodConfig;

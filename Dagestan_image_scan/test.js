@@ -1,25 +1,18 @@
-const _progress = require('cli-progress');
-const _colors = require('ansi-colors');
+const inquirer = require('inquirer');
+const cmdify = require('cmdify');
+const { spawn } = require('node:child_process');
 
-// helper function to display preset
-function showPreset(name, pos){
-    console.log(_colors.magenta('Preset: ' + name));
+const loader = ['/ Installing', '| Installing', '\\ Installing', '- Installing'];
+let i = 4;
+const ui = new inquirer.ui.BottomBar({ bottomBar: loader[i % 4] });
 
-    // create a new progress bar with preset
-    const bar = new _progress.Bar({
-        align: pos
-    }, _progress.Presets[name] || _progress.Presets.legacy);
-    bar.start(200, 0);
+setInterval(() => {
+  ui.updateBottomBar(loader[i++ % 4]);
+}, 300);
 
-    // random value 1..200
-    bar.update(Math.floor((Math.random() * 200) + 1));
-    bar.stop();
-    console.log('');
-}
-
-console.log('');
-showPreset('legacy', 'center');
-showPreset('shades_classic', 'right');
-showPreset('shades_grey', 'left');
-showPreset('rect', 'center');
-showPreset('bottom', 'bottom');
+const cmd = spawn(cmdify('npm'), ['-g', 'install', 'inquirer'], { stdio: 'pipe' });
+cmd.stdout.pipe(ui.log);
+cmd.on('close', () => {
+  ui.updateBottomBar('Installation done!\n');
+  process.exit();
+});

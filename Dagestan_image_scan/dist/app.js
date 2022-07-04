@@ -20,13 +20,22 @@ const prompt_service_1 = require("./core/cli/prompt.service");
 const pgwrite_1 = require("./core/db/pgwrite");
 const log_config_handler_1 = require("./helpers/log.config.handler");
 const class_logger_1 = require("./core/logger/class.logger");
+const delay = (ms) => __awaiter(void 0, void 0, void 0, function* () { return yield new Promise(resolve => setTimeout(resolve, ms)); });
 function app() {
     return __awaiter(this, void 0, void 0, function* () {
         try {
-            let conf = yield (0, prompt_service_1.startCLI)();
-            const loggerConf = yield (0, log_config_handler_1.logConfig)();
-            const logger = new class_logger_1.LoggerService(loggerConf);
-            main(conf, logger);
+            let start = yield (0, prompt_service_1.startOnGoodConfig)();
+            if ((start === null || start === void 0 ? void 0 : start.start) == 1) {
+                let conf = yield (0, prompt_service_1.startCLI)();
+                const loggerConf = yield (0, log_config_handler_1.logConfig)();
+                const logger = new class_logger_1.LoggerService(loggerConf);
+                loopMain(conf, logger);
+            }
+            else if ((start === null || start === void 0 ? void 0 : start.start) == 0) {
+                const loggerConf = yield (0, log_config_handler_1.logConfig)();
+                const logger = new class_logger_1.LoggerService(loggerConf);
+                loopMain(start === null || start === void 0 ? void 0 : start.conf, logger);
+            }
         }
         catch (err) {
             if (err) {
@@ -36,6 +45,28 @@ function app() {
     });
 }
 app();
+function loopMain(conf, logger) {
+    return __awaiter(this, void 0, void 0, function* () {
+        try {
+            let i = 1;
+            while (i > 0) {
+                logger.info(`Старт цикла ${i}`);
+                yield main(conf, logger);
+                let t = 30;
+                while (t != 0) {
+                    process.stdout.write(`Следующее сканирование начнется через ${t}с    \r`);
+                    yield delay(1000);
+                    t--;
+                }
+                i++;
+            }
+        }
+        catch (err) {
+            if (err)
+                logger.error(err.message);
+        }
+    });
+}
 function main(conf, logger, dirPath) {
     return __awaiter(this, void 0, void 0, function* () {
         try {
@@ -60,7 +91,7 @@ function main(conf, logger, dirPath) {
                         yield (pool === null || pool === void 0 ? void 0 : pool.end());
                     }
                     else if (uploadRes) {
-                        logger.info(`Сохраняем результаты в БД, будете добавлено ${uploadRes.size} записей`);
+                        logger.info(`Сохраняем результаты в БД, будет добавлено ${uploadRes.size} записей`);
                         yield (0, pgwrite_1.pgLog)(uploadRes, pool, logger);
                     }
                 }

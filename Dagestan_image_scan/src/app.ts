@@ -4,17 +4,26 @@ import { DirScan } from "./core/types/myTypes";
 import { uploadSession } from "./core/facex/facexSession";
 import { pg } from "./core/db/pg.service";
 import path from 'path';
-import { startCLI } from "./core/cli/prompt.service";
+import { startCLI, startOnGoodConfig } from "./core/cli/prompt.service";
 import { pgLog } from "./core/db/pgwrite";
 import { logConfig } from "./helpers/log.config.handler";
 import { LoggerService } from "./core/logger/class.logger";
+const delay = async (ms: number) => await new Promise(resolve => setTimeout(resolve, ms));
 
 async function app() {
     try {
-        let conf = await startCLI();
-        const loggerConf = await logConfig();
-        const logger = new LoggerService(loggerConf);
-        main(conf, logger);
+        let start = await startOnGoodConfig();
+        if (start?.start == 1) {
+            let conf = await startCLI();
+            const loggerConf = await logConfig();
+            const logger = new LoggerService(loggerConf);
+            loopMain(conf, logger);
+        } 
+        else if(start?.start == 0) {
+            const loggerConf = await logConfig();
+            const logger = new LoggerService(loggerConf);
+            loopMain(start?.conf as Conf, logger);
+        }
     }
     catch(err: any) {
         if (err) {
@@ -24,6 +33,27 @@ async function app() {
 }
 
 app();
+
+
+async function loopMain(conf: Conf, logger: LoggerService): Promise<void> {
+    try {
+        let i = 1;
+        while (i > 0) {
+            logger.info(`Старт цикла ${i}`);
+            await main(conf, logger);
+            let t = 30;
+            while (t != 0) {
+                process.stdout.write(`Следующее сканирование начнется через ${t}с    \r`);
+                await delay(1000);
+                t--;
+            }
+            i++;
+        }
+    }
+    catch(err: any) {
+        if (err) logger.error(err.message);
+    }
+}
 
 async function main(conf: Conf, logger: LoggerService, dirPath?: string) {
     try {
