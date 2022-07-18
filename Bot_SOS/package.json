@@ -1,0 +1,14 @@
+{
+  "name": "bot_sos",
+  "version": "1.0.0",
+  "description": "Telegram bot for SecurOS",
+  "main": "./dist/app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "PP",
+  "license": "ISC",
+  "dependencies": {
+    "grammy": "^1.9.0"
+  }
+}

@@ -1,0 +1,503 @@
+var P0 = 'Ї';
+var P1 = '\u00a1';
+var P2 = '\u00a2';
+var P3 = '\u00a3';
+var P4 = '\u00a4';
+var P5 = '\u00a5';
+var BL = '\u004b';
+var BI = '\u004c';
+var V1 = '±';
+var V2 = 'І';
+var V3 = 'і';
+var V4 = 'ґ';
+var V5 = 'µ';
+var V6 = '¶';
+var V7 = '\u00b7';
+var V8 = '\u00b8';
+var C0 = '`';
+var C1 = 'a';
+var TC = '\u00c8';
+var D0 = 'h';
+var D1 = '\u0069';
+var D2 = '\u006a';
+var D3 = '\u006b'; 
+var D4 = '\u006c';
+var D5 = '\u006d';
+var D6 = '\u006e';
+var D7 = '\u006f';
+var D8 = '\u0070';
+var D9 = '\u0071';
+var D10 = '\u0072';
+var D11 = '\u0073';
+var D12 = '\u0074';
+var D13 = '\u0075';
+var D14 = '\u0076';
+var D15 = '\u0077';
+var D16 = '\u0078';
+var D17 = '\u0079';
+var D18 = '\u007a';
+var D19 = '\u007b';
+var D20 = '\u007c';
+var D21 = '\u007d';
+var S0 = '\u0030';
+var S1 = '\u0031';
+var S2 = '\u0032';
+var T1 = 'Б';
+var T2 = 'В';
+var T3 = '\u00c3';
+var T4 = 'Д';
+var CR = '\u0051';
+var CG = '\u0052';
+var CY = '\u0053';
+var CB = '\u005c';
+var F12 = '\u00e2';
+var F16 = '\u00e3';
+var FU10 = '\u00e4';
+var N1 = '\u0010';
+var Z31 = '\u003f';
+var SC1 = '\u000d';
+var SC2 = '\u000a';
+var STP = 'ю'
+var FF = 'я'
+var F12 = 'в';
+
+var fso = new ActiveXObject("Scripting.FileSystemObject"); //работаем с файлами
+var gDaterLibPath = "C:\\Program Files (x86)\\ISS\\SecurOS\\Modules\\date.js";
+var grele_id1 = 10; // ID Реле шлагбаума 1
+var grele_id2 = 9; // ID Реле шлагбаума 2
+var r_id1 = 10; // ID Первого распознователя
+var r_id2 = 9; // ID Второго распознователя
+var b1_id = '\u0029'; // Адрес первого табло
+var b2_id = '\u002A'; // Адрес второго табло
+var g_dbConnection = new ActiveXObject("ADODB.Connection");
+var g_dbConnection2 = new ActiveXObject("ADODB.Connection");
+var onStartA = new Array();
+var onStartB = new Array();
+var g_id = "recognizer" + r_id1 + "_" + "recognizer" + r_id2;
+var String_C1 = N1 + b1_id + (FF).toString(16) + (V2).toString(16) + "    " + SC1 + SC2 + (FF).toString(16) + (V2).toString(16) + "    " + SC1 + SC2 + (FF).toString(16) + (V2).toString(16) + "    " + N1 + (STP).toString(16);
+var String_C2 = N1 + b2_id + (FF).toString(16) + (V2).toString(16) + "    " + SC1 + SC2 + (FF).toString(16) + (V2).toString(16) + "    " + SC1 + SC2 + (FF).toString(16) + (V2).toString(16) + "    " + N1 + (STP).toString(16);
+
+
+
+function Init()
+{
+	//Core.RegisterEventHandler("LPR_LOGIC","*", "CAR_LP_FOUND", "OnFound");
+	Core.RegisterEventHandler("LPR_CAM_LITE","9", "CAR_LP_RECOGNIZED", "CAR_LP_RECOGNIZED");
+	Core.RegisterEventHandler("LPR_CAM_LITE","10", "CAR_LP_RECOGNIZED", "CAR_LP_RECOGNIZED");
+	g_dbConnection.Open("DRIVER={PostgreSQL Unicode};SERVER=127.0.0.1;port=5432;DATABASE=auto;UID=postgres;PWD=postgres;");
+	g_dbConnection2.Open("DRIVER={PostgreSQL Unicode};SERVER=127.0.0.1;port=5432;DATABASE=ext;UID=postgres;PWD=postgres;");
+	Log.Info("Init - Done");
+	fs = new ActiveXObject("Scripting.FileSystemObject");
+	a = fs.CreateTextFile("COM3:",true);
+	Core.RegisterEventHandler("MACRO","1.6","RUN","OnTest");
+	Log.info("Init()")
+	onStart();
+}
+
+function onStart()
+{
+	var String_T1 = N1 + b1_id + (FF).toString(16) + (V2).toString(16) + Convert("   Московская школа управления СКОЛКОВО","Windows-1251","cp866") + "  Moscow School of Management SKOLKOVO " + SC1 + SC2 + (FF).toString(16) + D0 + (FF).toString(16) + (C1).toString(16) + (FF).toString(16) + (T1).toString(16) + SC1 + SC2 + (FF).toString(16) + (C1).toString(16) + onTime() + N1 + (STP).toString(16);
+	var String_T2 = N1 + b2_id + (FF).toString(16) + (V2).toString(16) + Convert("   Московская школа управления СКОЛКОВО","Windows-1251","cp866") + "  Moscow School of Management SKOLKOVO " + SC1 + SC2 + (FF).toString(16) + D0 + (FF).toString(16) + (C1).toString(16) + (FF).toString(16) + (T1).toString(16) + SC1 + SC2 + (FF).toString(16) + (C1).toString(16) + onTime() + N1 + (STP).toString(16);
+	//a.Write(String_T1);
+	//a.Write(String_T2);
+}
+
+function OnTest()
+{
+var String_T1 = N1 + b1_id + (FF).toString(16) + (V2).toString(16) + Convert("   Московская школа управления СКОЛКОВО","Windows-1251","cp866") + "  Moscow School of Management SKOLKOVO " + SC1 + SC2 + (FF).toString(16) + D0 + (FF).toString(16) + (C1).toString(16) + (FF).toString(16) + (T1).toString(16) + SC1 + SC2 + (FF).toString(16) + (C1).toString(16) + "29.09.17" + N1 + (STP).toString(16);
+	//var String_T2 = N1 + b2_id + (FF).toString(16) + (FF).toString(16) + (V4).toString(16) + (F12).toString(16) + C1 + Convert("   Московская школа управления СКОЛКОВО","Windows-1251","cp866") + " Moscow School of Management SKOLKOVO " + SC1 + SC2 + (FF).toString(16) + D0 + (FF).toString(16) + C1 + (T1).toString(16) + SC1 + SC2 + (FF).toString(16) + D0 + (FF).toString(16) + C1 + (FF).toString(16) + (T2).toString(16) + (FF).toString(16) + (T4).toString(16) + N1 + (STP).toString(16);
+	//a.Write(String_T1);
+	//a.Write(String_T2);
+}
+
+function CAR_LP_RECOGNIZED(e)
+{
+	Log.info("номер: " + e.number + " направление: " + e.direction_name + " lpr: " + e.sourceId);
+	Writelog("номер: " + e.number + " направление: " + e.direction_name + " lpr: " + e.sourceId);
+	var car_found_vip = g_dbConnection2.Execute("SELECT * FROM white_list_vip WHERE number = '" + e.number + "' OR number = (TRANSLATE('"+e.number+"','ABEKMHOPCTYX','АВЕКМНОРСТУХ')) LIMIT 1");
+	if(!car_found_vip.EOF)
+	{
+		Writelog("машина найдена в white_list_vip: " + e.number + " направление: " + e.direction_name + " lpr: " + e.sourceId);
+		
+		if(e.sourceId == r_id1 && inCheckNumber(e.number) && (e.direction_name == "приближается" || e.direction_name == "unknown"))
+		{
+			var string_e1 = N1 + b1_id + (FF).toString(16) + (V2).toString(16) + Convert("   Московская школа управления СКОЛКОВО","Windows-1251","cp866") + "  Moscow School of Management SKOLKOVO " + SC1 + SC2 + (FF).toString(16) + D0 + (FF).toString(16) + (C1).toString(16) + (FF).toString(16) + (F12).toString(16) + "  " + e.number + SC1 + SC2 + (FF).toString(16) + (V2).toString(16) + Convert("    Добро пожаловать!  ","Windows-1251","cp866") + "Welcome!" + Convert("     Добро пожаловать!  ","Windows-1251","cp866") + "Welcome!" + N1 + (STP).toString(16);
+			//a.Write(string_e1);
+			var xmlhttp = new ActiveXObject("Msxml2.XMLHTTP"); 
+    		xmlhttp.open("POST", "http://msk-passreq/api/barrier/processincoming?plateNumber=" + e.number + "&barrierId=" + e.recognizer_id, true);
+			xmlhttp.setRequestHeader('Authorization', 'api-key 4367a3cf179e4421ba635a604f8c379c');    
+			xmlhttp.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');	
+			xmlhttp.send();
+			Writelog("открываем реле: " + grele_id1);
+			Core.DoReact("GRELE",grele_id1,"ON");
+			onTablo(e.recognizer_id);				
+			Script.SetTimeout("greleOFF(" + grele_id1 + "," + e.recognizer_id +  ");",3000);
+			Script.SetTimeout("clear_tablo(" + e.recognizer_id  + ");", 13000);	
+		} else if(e.sourceId == r_id2 && inCheckNumber(e.number) && (e.direction_name == "приближается" || e.direction_name == "unknown"))
+		{
+			var string_e2 = N1 + b2_id + (FF).toString(16) + (V2).toString(16) + Convert("   Московская школа управления СКОЛКОВО","Windows-1251","cp866") + "  Moscow School of Management SKOLKOVO " + SC1 + SC2 + (FF).toString(16) + D0 + (FF).toString(16) + (C1).toString(16) + (FF).toString(16) + (F12).toString(16) + "  " + e.number + SC1 + SC2 + (FF).toString(16) + (V2).toString(16) + Convert("    Счастливого пути!  ","Windows-1251","cp866") + "Bon voyage!" + Convert("     Счастливого пути!  ","Windows-1251","cp866") + "Bon voyage!" + N1 + (STP).toString(16);
+			//a.Write(string_e2);
+			var xmlhttp = new ActiveXObject("Msxml2.XMLHTTP"); 
+    		xmlhttp.open("POST", "http://msk-passreq/api/barrier/processincoming?plateNumber=" + e.number + "&barrierId=" + e.recognizer_id, true);
+			xmlhttp.setRequestHeader('Authorization', 'api-key 4367a3cf179e4421ba635a604f8c379c');    
+			xmlhttp.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');	
+			xmlhttp.send();
+			Writelog("открываем реле: " + grele_id2);
+			Core.DoReact("GRELE",grele_id2,"ON");
+			onTablo(e.recognizer_id);				
+			Script.SetTimeout("greleOFF(" + grele_id2 + "," + e.recognizer_id +  ");",3000);
+			Script.SetTimeout("clear_tablo(" + e.recognizer_id  + ");", 13000);	
+		}
+
+		
+	} else {
+		Writelog("номера не найдена в списке white_list_vip: " + e.number);
+		var car_found_all = g_dbConnection2.Execute("SELECT * FROM white_list_all WHERE number = '" + e.number + "' OR number = (TRANSLATE('"+e.number+"','ABEKMHOPCTYX','АВЕКМНОРСТУХ')) LIMIT 1");
+		if(!car_found_all.EOF)
+		{
+			Writelog("машина найдена в white_list_all: " + e.number + " направление: " + e.direction_name + " lpr: " + e.sourceId);
+		
+			if(e.sourceId == r_id1 && inCheckNumber(e.number) && (e.direction_name == "приближается" || e.direction_name == "unknown"))
+			{
+				var string_e1 = N1 + b1_id + (FF).toString(16) + (V2).toString(16) + Convert("   Московская школа управления СКОЛКОВО","Windows-1251","cp866") + "  Moscow School of Management SKOLKOVO " + SC1 + SC2 + (FF).toString(16) + D0 + (FF).toString(16) + (C1).toString(16) + (FF).toString(16) + (F12).toString(16) + "  " + e.number + SC1 + SC2 + (FF).toString(16) + (V2).toString(16) + Convert("    Добро пожаловать!  ","Windows-1251","cp866") + "Welcome!" + Convert("     Добро пожаловать!  ","Windows-1251","cp866") + "Welcome!" + N1 + (STP).toString(16);
+				//a.Write(string_e1);
+				var xmlhttp = new ActiveXObject("Msxml2.XMLHTTP"); 
+    			xmlhttp.open("POST", "http://msk-passreq/api/barrier/processincoming?plateNumber=" + e.number + "&barrierId=" + e.recognizer_id, true);
+				xmlhttp.setRequestHeader('Authorization', 'api-key 4367a3cf179e4421ba635a604f8c379c');    
+				xmlhttp.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');	
+				xmlhttp.send();
+				Writelog("открываем реле: " + grele_id1);
+				Core.DoReact("GRELE",grele_id1,"ON");
+				onTablo(e.recognizer_id);				
+				Script.SetTimeout("greleOFF(" + grele_id1 + "," + e.recognizer_id +  ");",3000);
+				Script.SetTimeout("clear_tablo(" + e.recognizer_id  + ");", 13000);	
+			} else if(e.sourceId == r_id2 && inCheckNumber(e.number) && (e.direction_name == "приближается" || e.direction_name == "unknown"))
+			{
+				var string_e2 = N1 + b2_id + (FF).toString(16) + (V2).toString(16) + Convert("   Московская школа управления СКОЛКОВО","Windows-1251","cp866") + "  Moscow School of Management SKOLKOVO " + SC1 + SC2 + (FF).toString(16) + D0 + (FF).toString(16) + (C1).toString(16) + (FF).toString(16) + (F12).toString(16) + "  " + e.number + SC1 + SC2 + (FF).toString(16) + (V2).toString(16) + Convert("    Счастливого пути!  ","Windows-1251","cp866") + "Bon voyage!" + Convert("     Счастливого пути!  ","Windows-1251","cp866") + "Bon voyage!" + N1 + (STP).toString(16);
+				//a.Write(string_e2);
+				var xmlhttp = new ActiveXObject("Msxml2.XMLHTTP"); 
+    			xmlhttp.open("POST", "http://msk-passreq/api/barrier/processincoming?plateNumber=" + e.number + "&barrierId=" + e.recognizer_id, true);
+				xmlhttp.setRequestHeader('Authorization', 'api-key 4367a3cf179e4421ba635a604f8c379c');    
+				xmlhttp.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');	
+				xmlhttp.send();
+				Writelog("открываем реле: " + grele_id2);
+				Core.DoReact("GRELE",grele_id2,"ON");
+				onTablo(e.recognizer_id);				
+				Script.SetTimeout("greleOFF(" + grele_id2 + "," + e.recognizer_id +  ");",3000);
+				Script.SetTimeout("clear_tablo(" + e.recognizer_id  + ");", 13000);	
+			}
+	
+		} else {
+		
+			Writelog("машина не найдена в white_list_all: " + e.number + " направление: " + e.direction_name + " lpr: " + e.sourceId);
+			var car_found = g_dbConnection2.Execute("SELECT * FROM white WHERE number = '" + e.number + "' OR number = (TRANSLATE('"+e.number+"','ABEKMHOPCTYX','АВЕКМНОРСТУХ')) LIMIT 1");
+			if(!car_found.EOF)
+			{
+				Writelog("машина найдена в white: " + e.number + " направление: " + e.direction_name + " lpr: " + e.sourceId);
+		
+				if(e.sourceId == r_id1 && inCheckNumber(e.number) && (e.direction_name == "приближается" || e.direction_name == "unknown"))
+				{
+					var string_e1 = N1 + b1_id + (FF).toString(16) + (V2).toString(16) + Convert("   Московская школа управления СКОЛКОВО","Windows-1251","cp866") + "  Moscow School of Management SKOLKOVO " + SC1 + SC2 + (FF).toString(16) + D0 + (FF).toString(16) + (C1).toString(16) + (FF).toString(16) + (F12).toString(16) + "  " + e.number + SC1 + SC2 + (FF).toString(16) + (V2).toString(16) + Convert("    Добро пожаловать!  ","Windows-1251","cp866") + "Welcome!" + Convert("     Добро пожаловать!  ","Windows-1251","cp866") + "Welcome!" + N1 + (STP).toString(16);
+					//a.Write(string_e1);
+					Writelog("открываем реле: " + grele_id1);
+					Core.DoReact("GRELE",grele_id1,"ON");
+					onTablo(e.recognizer_id);				
+					Script.SetTimeout("greleOFF(" + grele_id1 + "," + e.recognizer_id +  ");",2000);
+					Script.SetTimeout("clear_tablo(" + e.recognizer_id  + ");", 13000);	
+				} else if(e.sourceId == r_id2 && inCheckNumber(e.number) && (e.direction_name == "приближается" || e.direction_name == "unknown"))
+				{
+					var string_e2 = N1 + b2_id + (FF).toString(16) + (V2).toString(16) + Convert("   Московская школа управления СКОЛКОВО","Windows-1251","cp866") + "  Moscow School of Management SKOLKOVO " + SC1 + SC2 + (FF).toString(16) + D0 + (FF).toString(16) + (C1).toString(16) + (FF).toString(16) + (F12).toString(16) + "  " + e.number + SC1 + SC2 + (FF).toString(16) + (V2).toString(16) + Convert("    Счастливого пути!  ","Windows-1251","cp866") + "Bon voyage!" + Convert("     Счастливого пути!  ","Windows-1251","cp866") + "Bon voyage!" + N1 + (STP).toString(16);
+					//a.Write(string_e2);
+					Writelog("открываем реле: " + grele_id2);
+					Core.DoReact("GRELE",grele_id2,"ON");
+					onTablo(e.recognizer_id);				
+					Script.SetTimeout("greleOFF(" + grele_id2 + "," + e.recognizer_id +  ");",2000);
+					Script.SetTimeout("clear_tablo(" + e.recognizer_id  + ");", 13000);	
+				}
+		
+		
+			} else {
+			
+				Writelog("машина не найдена в списке white: " + e.number + " время фиксации: " + e.best_view_date_time);
+				if (e.sourceId == r_id1 && inCheckNumber(e.number) && (e.direction_name == "приближается" || e.direction_name == "unknown"))
+				{	
+				//Writelog("распознанный номер: " + e.number + " время кадра: " + e.best_view_date_time + " распознаватель: " + e.sourceid + " направление: " + e.direction_name);
+					Log.info("мы тут " + e.number + " lpr" + e.sourceid);
+					var string_e1 = N1 + b1_id + (FF).toString(16) + (V2).toString(16) + Convert("   Московская школа управления СКОЛКОВО","Windows-1251","cp866") + "  Moscow School of Management SKOLKOVO " + SC1 + SC2 + (FF).toString(16) + D0 + (FF).toString(16) + (C1).toString(16) + (FF).toString(16) + (F12).toString(16) + "  " + e.number + SC1 + SC2 + (FF).toString(16) + (V2).toString(16) + Convert("     Предъявите пропуск! ","Windows-1251","cp866") + "Produce a pass! " + Convert("    Предъявите пропуск! ","Windows-1251","cp866") + "Produce a pass!" + N1 + (STP).toString(16);
+					//a.Write(string_e1);
+					Writelog("выводим на контроллер: " + string_e1);
+					Script.SetTimeout("clear_tablo(" + e.sourceid + ");", 16000);	
+				} else if (e.sourceId == r_id2 && inCheckNumber(e.number) && (e.direction_name == "приближается" || e.direction_name == "unknown"))
+				{
+					//Writelog("распознанный номер: " + e.number + " время кадра: " + e.best_view_date_time + " распознаватель: " + e.sourceid + " направление: " + e.direction_name);
+					Log.info("мы тут " + e.number + " lpr" + e.sourceid);	
+					var string_e2 = N1 + b2_id + (FF).toString(16) + (V2).toString(16) + Convert("   Московская школа управления СКОЛКОВО","Windows-1251","cp866") + "  Moscow School of Management SKOLKOVO " + SC1 + SC2 + (FF).toString(16) + D0 + (FF).toString(16) + (C1).toString(16) + (FF).toString(16) + (F12).toString(16) + "  " + e.number + SC1 + SC2 + (FF).toString(16) + (V2).toString(16) + Convert("     Предъявите пропуск! ","Windows-1251","cp866") + "Produce a pass! " + Convert("    Предъявите пропуск! ","Windows-1251","cp866") + "Produce a pass!" + N1 + (STP).toString(16);
+					//a.Write(string_e2);
+					Writelog("выводим на контроллер: " + string_e2);
+					Script.SetTimeout("clear_tablo(" + e.sourceid + ");", 16000);
+				} 	
+			}
+		}
+	}			
+	
+}
+
+		
+function inCheckNumber(hash_name)
+{
+    for(var i = 0; i < hash_name.length - 1; i++);
+    {
+        if(hash_name.charAt(i) == "?") return false;
+    }
+    return true;	
+}
+
+function onTabloOFFAutomat(e)
+{
+	Log.Info("Tablo format")
+	Log.Info(e + " " + e.recognizer_id)
+	var String_T1 = N1 + b1_id + (FF).toString(16) + (V2).toString(16) + Convert("   Московская школа управления СКОЛКОВО","Windows-1251","cp866") + "  Moscow School of Management SKOLKOVO " + SC1 + SC2 + (FF).toString(16) + D0 + (FF).toString(16) + (C1).toString(16) + (FF).toString(16) + (T1).toString(16) + SC1 + SC2 + (FF).toString(16) + (C1).toString(16) + onTime() + N1 + (STP).toString(16);
+	var String_T2 = N1 + b2_id + (FF).toString(16) + (V2).toString(16) + Convert("   Московская школа управления СКОЛКОВО","Windows-1251","cp866") + "  Moscow School of Management SKOLKOVO " + SC1 + SC2 + (FF).toString(16) + D0 + (FF).toString(16) + (C1).toString(16) + (FF).toString(16) + (T1).toString(16) + SC1 + SC2 + (FF).toString(16) + (C1).toString(16) + onTime() + N1 + (STP).toString(16);
+	
+	if(e == r_id1)
+	{
+	//a.Write(String_T1);
+	//Writelog("выводим на контроллер: " + String_1);
+	Log.Info("строка 1 Распознователь " + e);
+	}
+	else if (e == r_id2)
+	{
+	//a.Write(String_T2);
+	//Writelog("выводим на контроллер: " + String_1);
+	Log.Info("строка 1 Распознователь " + e);
+	}
+}
+
+function onTablo(e)
+{	Log.Info(e + " " + e.recognizer_id)
+	if(e.recognizer_id == r_id1)
+	{
+	var string_f1 = N1 + b1_id + (FF).toString(16) + (V2).toString(16) + Convert("   Московская школа управления СКОЛКОВО","Windows-1251","cp866") + "  Moscow School of Management SKOLKOVO " + SC1 + SC2 + (FF).toString(16) + D0 + (FF).toString(16) + (C1).toString(16) + (FF).toString(16) + (F12).toString(16) + "  " + e.number + SC1 + SC2 + (FF).toString(16) + (V2).toString(16) + Convert("    Добро пожаловать! ","Windows-1251","cp866") + "Welcome!" + N1 + (STP).toString(16);
+	//a.Write(string_f1);
+	Log.Info("Есть номер");
+	//Writelog("выводим на контроллер: " + String_4 + " " + nomer + " " + String_4_1);
+	Script.SetTimeout("clear_tablo(" + e + ");", 13000);
+	}
+	else if (e.recognizer_id == r_id2)
+	{
+	var string_f2 = N1 + b2_id + (FF).toString(16) + (V2).toString(16) + Convert("   Московская школа управления СКОЛКОВО","Windows-1251","cp866") + "  Moscow School of Management SKOLKOVO " + SC1 + SC2 + (FF).toString(16) + D0 + (FF).toString(16) + (C1).toString(16) + (FF).toString(16) + (F12).toString(16) + "  " + e.number + SC1 + SC2 + (FF).toString(16) + (V2).toString(16) + Convert("    Добро пожаловать! ","Windows-1251","cp866") + "Welcome!" + N1 + (STP).toString(16);
+	//a.Write(string_f2);
+	//Writelog("выводим на контроллер: " + String_4 + " " + nomer + " " + String_4_1);
+	Script.SetTimeout("clear_tablo(" + e + ");", 13000);
+	}
+	
+}
+
+function clear_tablo(e)
+{	
+	Log.Info("Clear_Tablo")
+	Log.Info (e)	
+	if (e == r_id1)
+	{
+		//a.Write(String_C1);
+		Log.Info("Clear_Tablo " + e)
+	//	onTabloOFFAutomat(e)
+	Script.SetTimeout("onTabloOFFAutomat(" + e + ");", 100);
+	}
+	if (e == r_id2)
+	{
+		//a.Write(String_C2);
+		Log.Info("Clear_Tablo " + e)
+	//	onTabloOFFAutomat(e)
+		Script.SetTimeout("onTabloOFFAutomat(" + e + ");", 100);
+	}
+}
+
+function OnFound(e)
+{
+	Log.info("Найден");
+	Log.info(e);
+	if(e.recognizer_id == r_id1 && e.direction_id != "2" && e.database_type=="whitelist")
+	{
+		Writelog("машина найдена: " + e.number + " время кадра: " + e.best_view_date_time + " распознаватель: " + e.recognizer_id);		
+		Core.DoReact("GRELE",grele_id1,"ON");
+		Log.Info("On Found " + e.recognizer_id + " " + e.sourceid);
+		onTablo(e.recognizer_id);				
+		Writelog("открываем реле: " + grele_id1);
+		Script.SetTimeout("greleOFF(" + grele_id1 + "," + e.recognizer_id +  ");",3000);
+		Script.SetTimeout("clear_tablo(" + e.recognizer_id  + ");", 13000);						
+	} else if(e.recognizer_id == r_id2 && e.direction_id != "2" && e.database_type=="whitelist")
+	{
+		Writelog("машина найдена: " + e.number + " время кадра: " + e.best_view_date_time + " распознаватель: " + e.recognizer_id);		
+		Core.DoReact("GRELE",grele_id2,"ON");
+		Log.Info("On Found " + e.recognizer_id + " " + e.sourceid);
+		onTablo(e.recognizer_id);						
+		Writelog("открываем реле: " + grele_id2);
+		Script.SetTimeout("greleOFF(" + grele_id2 + "," + e.recognizer_id +  ");",3000);		
+		Script.SetTimeout("clear_tablo(" + e.recognizer_id  + ");", 13000);				
+	} else if(e.recognizer_id == r_id1 && e.direction_id != "2" && e.sourceId == "7")
+	{
+		Writelog("машина найдена: " + e.number + " время кадра: " + e.best_view_date_time + " распознаватель: " + e.recognizer_id);	
+    var xmlhttp = new ActiveXObject("Msxml2.XMLHTTP"); 
+    xmlhttp.open("POST", "http://msk-passreq/api/barrier/processincoming?plateNumber=" + e.number + "&barrierId=" + e.recognizer_id, true);
+	xmlhttp.setRequestHeader('Authorization', 'api-key 4367a3cf179e4421ba635a604f8c379c');    
+	xmlhttp.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+	
+	xmlhttp.send();
+		Log.info("reg: " + req);
+		Core.DoReact("GRELE",grele_id1,"ON");
+		Log.Info("On Found " + e.recognizer_id + " " + e.sourceid);
+		onTablo(e.recognizer_id);				
+		Writelog("открываем реле: " + grele_id1);
+		Script.SetTimeout("greleOFF(" + grele_id1 + "," + e.recognizer_id +  ");",3000);
+		Script.SetTimeout("clear_tablo(" + e.recognizer_id  + ");", 13000);						
+	} else if(e.recognizer_id == r_id2 && e.direction_id != "2" && e.sourceId == "7")
+	{
+		Writelog("машина найдена: " + e.number + " время кадра: " + e.best_view_date_time + " распознаватель: " + e.recognizer_id);		
+    var xmlhttp = new ActiveXObject("Msxml2.XMLHTTP"); 
+    xmlhttp.open("POST", "http://msk-passreq/api/barrier/processincoming?plateNumber=" + e.number + "&barrierId=" + e.recognizer_id, true);
+	xmlhttp.setRequestHeader('Authorization', 'api-key 4367a3cf179e4421ba635a604f8c379c');    
+	xmlhttp.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+	
+	xmlhttp.send();
+		Log.info("reg: " + req);
+		Core.DoReact("GRELE",grele_id2,"ON");
+		Log.Info("On Found " + e.recognizer_id + " " + e.sourceid);
+		onTablo(e.recognizer_id);						
+		Writelog("открываем реле: " + grele_id2);
+		Script.SetTimeout("greleOFF(" + grele_id2 + "," + e.recognizer_id +  ");",3000);		
+		Script.SetTimeout("clear_tablo(" + e.recognizer_id  + ");", 13000);				
+	}
+	
+	
+}
+
+
+function greleOFF(id,recognizer_id,e)
+	{ Log.Info("GRELE OFF " + e + " " + id + " " + recognizer_id);
+		if (recognizer_id == r_id1)
+		{
+			Core.DoReact("GRELE",grele_id1,"OFF");
+			Writelog("закрываем реле: " + grele_id1);
+			Log.Info("закрываем реле: " + grele_id1);
+		}
+		if  (recognizer_id == r_id2)
+		{
+			Core.DoReact("GRELE",grele_id2,"OFF");
+			Writelog("закрываем реле: " + grele_id2);
+			Log.Info("закрываем реле: " + grele_id2);
+		}	
+	}
+
+Writelog = function(Line, FileName, IsNeedTime, IsAppend, IsWriteLine)
+{
+	var Folder = "C:\\recognized_found\\";
+	if(typeof LogFolder != "undefined") Folder = LogFolder;
+	if(FileName === undefined) FileName = Folder + g_id + "_" + new Date().Format("%y-%m-%d.log");
+	if(IsNeedTime === undefined) IsNeedTime = 1;
+	if(IsAppend === undefined) IsAppend = 1;
+	if(IsWriteLine === undefined) IsWriteLine = 1;
+	try
+	{
+		var Text = IsNeedTime ? new Date().Format("%y-%m-%d %H:%M:%S.%I") + "\t" + String(Line) : String(Line);
+		var TextFile = fso.OpenTextFile(FileName, IsAppend ? 8 : 2, true, 0);
+		IsWriteLine ? TextFile.WriteLine(Text) : TextFile.Write(Text);
+		TextFile.Close();
+	} catch(err) {
+		Writelog(err.message);
+	}
+}
+var AddZero = function(x, pad)
+{
+	var i = "" + x;
+	if(pad === undefined) pad = 2;
+	while(i.length < pad) i = "0" + i;
+	return i;
+}
+
+Date.prototype.Format = function(Format)
+{
+	var f = {y : this.getFullYear()
+		,m : AddZero(this.getMonth() + 1)
+		,d : AddZero(this.getDate())
+		,H : AddZero(this.getHours())
+		,M : AddZero(this.getMinutes())
+		,S : AddZero(this.getSeconds())
+		,I : AddZero(this.getMilliseconds(), 3)
+		};
+	for(var k in f) Format = Format.replace('%' + k, f[k]);
+	return Format;
+}
+DateF = function(Str, Format)
+{
+	if(Format === undefined) Format = "yyyy-mm-dd HH:MM:SS.III";
+	var y = "", m = "", d = "", H = "", M = "", S = "", I = "";
+	for(var i = 0; i < Format.length; i++)
+	{
+		if(Format.charAt(i) == "y") y += Str.charAt(i); else
+		if(Format.charAt(i) == "m") m += Str.charAt(i); else
+		if(Format.charAt(i) == "d") d += Str.charAt(i); else
+		if(Format.charAt(i) == "H") H += Str.charAt(i); else
+		if(Format.charAt(i) == "M") M += Str.charAt(i); else
+		if(Format.charAt(i) == "S") S += Str.charAt(i); else
+		if(Format.charAt(i) == "I") I += Str.charAt(i);
+	}
+	return new Date(y, m - 1, d, H, M, S, I);
+}
+
+Convert = function(Text, From, To, SubstringFrom)
+{
+	if(From === undefined) From = "cp866";
+	if(To === undefined) To = "Windows-1251";
+	if(SubstringFrom === undefined && From == "Windows-1251" && To == "cp866") SubstringFrom = 3;
+	var Stream = new ActiveXObject("ADODB.Stream");
+	//Stream.Type = 2; //1 - Binary data, 2 - Default. Text data
+	Stream.Open();
+	Stream.CharSet = To;// "Windows-1251";
+	Stream.WriteText(Text);
+	Stream.Position = 0;
+	Stream.CharSet = From;//"UTF-8";
+	var StreamText = "";
+	try
+	{
+		StreamText = Stream.ReadText();
+	} catch(err) {
+		//Writelog(err.message);
+	}
+	Stream.Close();
+	if(SubstringFrom && StreamText.length >= SubstringFrom) StreamText = StreamText.substring(SubstringFrom);
+	return StreamText;O
+}
+
+function onTime()
+{
+var date = new Date()
+   var y = date.getFullYear();
+   var m = date.getMonth() + 1;
+if (m <= "9")
+{
+	m = "0" + m;
+}
+   var d = date.getDate();
+if (d <= "9")
+{
+	d = "0" + d;
+}
+   var hours = date.getHours();
+if (hours <= "9")
+{
+	hours = "0" + hours;
+}
+   var minutes = date.getMinutes();
+if (minutes <= "9")
+{
+	minutes = "0" + minutes;
+}
+   var seconds = date.getSeconds();
+if (seconds <= "9")
+{
+	seconds = "0" + seconds;
+}
+var t = d + "." + m + "." + y.toString().slice(2,4);
+return t;
+}
