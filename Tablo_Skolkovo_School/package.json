@@ -6,7 +6,12 @@
   "type": "commonjs",
   "scripts": {
     "start": "node ./dist/main.js",
+    "dev": "nodemon",
+    "dev:inspect": "nodemon -e ts,json --exec node --inspect=localhost:9222 -r ts-node/register src/main.ts",
+    "clinic": "clinic doctor --on-port 'autocannon -m POST localhost:4545/v1/tablo1' -- node ./dist/main.js ",
     "build": "tsc",
+    "lint": "eslint ./src/**",
+    "lint:fix": "eslint ./src/** --fix",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "PP",
@@ -21,6 +26,15 @@
   },
   "devDependencies": {
     "@types/express": "^4.17.13",
-    "@types/node": "^18.0.3"
+    "@types/node": "^18.0.3",
+    "@typescript-eslint/eslint-plugin": "^5.30.6",
+    "@typescript-eslint/parser": "^5.30.6",
+    "eslint": "^8.20.0",
+    "eslint-config-prettier": "^8.5.0",
+    "eslint-plugin-prettier": "^4.2.1",
+    "nodemon": "^2.0.19",
+    "prettier": "^2.7.1",
+    "ts-node": "^10.9.1",
+    "typescript": "^4.7.4"
   }
 }
