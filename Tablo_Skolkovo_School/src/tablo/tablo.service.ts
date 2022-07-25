@@ -48,7 +48,7 @@ export class Tablo implements ITablo {
 						reject(false);
 					} else {
 						this.tablo.removeAllListeners();
-						this.tablo.destroy();
+						this.tablo.end();
 						resolve(true);
 					}
 				});
