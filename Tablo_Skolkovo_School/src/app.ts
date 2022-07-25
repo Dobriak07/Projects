@@ -7,6 +7,7 @@ import { ExeptionFilter } from './errors/exeption.filter';
 import 'reflect-metadata';
 import { inject, injectable } from 'inversify';
 import { TYPES } from './types';
+import { ConfigService } from './config/config.service';
 
 @injectable()
 export class App {
@@ -18,6 +19,7 @@ export class App {
 		@inject(TYPES.ILogger) private logger: ILogger,
 		@inject(TYPES.TabloController) private tabloController: TabloController,
 		@inject(TYPES.ExeptionFilter) private exeptionFilter: ExeptionFilter,
+		@inject(TYPES.ConfigService) private ConfigService: ConfigService,
 	) {
 		this.app = express();
 		this.port = 4545;
@@ -40,6 +42,7 @@ export class App {
 	}
 
 	public async init(): Promise<void> {
+		this.logger.configure(this.ConfigService);
 		this.useRoutes();
 		this.useExeptionFilters();
 		this.server = this.app.listen(this.port);
