@@ -1,0 +1,9 @@
+/node_modules
+/dist
+/.clinic
+/.env
+/logs
+/.vscode
+/info
+/tests
+/app.logger.json
