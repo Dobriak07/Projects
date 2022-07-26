@@ -1,5 +1,5 @@
 import 'reflect-metadata';
-import { ITablo, TabloState } from './tablo.service.interface';
+import { ITablo } from './tablo.service.interface';
 import net, { Socket } from 'net';
 import { inject, injectable } from 'inversify';
 import { TYPES } from '../types';
@@ -24,7 +24,7 @@ export class Tablo implements ITablo {
 
 			this.tablo.on('error', async (err) => {
 				if (err instanceof Error) {
-					this.logger.error(`Ошибка подключения к порту моксы ${err.message}`);
+					this.logger.error(`Ошибка подключения к моксe ${err.message}`);
 				}
 				this.tablo.end();
 				this.tablo.removeAllListeners();
@@ -44,7 +44,7 @@ export class Tablo implements ITablo {
 				this.logger.info(`Успешное подключение к моксе ${host}:${port}`);
 				this.tablo.write(msg, (err) => {
 					if (err && err instanceof Error) {
-						this.logger.error(`Error sending to Moxa ${err.message}`);
+						this.logger.error(`Ошибка отправки данных моксе ${err.message}`);
 						reject(false);
 					} else {
 						this.tablo.removeAllListeners();
@@ -56,7 +56,7 @@ export class Tablo implements ITablo {
 
 			this.tablo.on('error', async (err) => {
 				if (err instanceof Error) {
-					this.logger.error(`Ошибка подключения к порту моксы ${err.message}`);
+					this.logger.error(`Ошибка подключения к моксе ${err.message}`);
 				}
 				this.tablo.end();
 				this.tablo.removeAllListeners();

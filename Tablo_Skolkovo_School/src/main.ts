@@ -1,8 +1,8 @@
+import 'reflect-metadata';
 import { App } from './app';
 import { ExeptionFilter } from './errors/exeption.filter';
 import { LoggerService } from './logger/logger.service';
 import { TabloController } from './tablo/tablo.controller';
-import 'reflect-metadata';
 import { Container, ContainerModule, interfaces } from 'inversify';
 import { TYPES } from './types';
 import { ILogger } from './logger/logger.inteface';
@@ -25,9 +25,9 @@ export const appBindings = new ContainerModule((bind: interfaces.Bind) => {
 	bind<IExeptionFilter>(TYPES.ExeptionFilter).to(ExeptionFilter).inSingletonScope();
 	bind<ITabloController>(TYPES.TabloController).to(TabloController).inSingletonScope();
 	bind<IConfigService>(TYPES.ConfigService).to(ConfigService).inSingletonScope();
-	bind<ITablo>(TYPES.TabloService).to(Tablo);
-	bind<TabloOld>(TYPES.TabloOld).to(TabloOld);
-	bind<TabloNew>(TYPES.TabloNew).to(TabloNew);
+	bind<ITablo>(TYPES.TabloService).to(Tablo).inSingletonScope();
+	bind<TabloOld>(TYPES.TabloOld).to(TabloOld).inSingletonScope();
+	bind<TabloNew>(TYPES.TabloNew).to(TabloNew).inSingletonScope();
 	bind<App>(TYPES.Application).to(App).inSingletonScope();
 });
 

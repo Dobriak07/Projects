@@ -10,6 +10,7 @@ import { ITablo } from './tablo.service.interface';
 import { ConfigService } from '../config/config.service';
 import { TabloOld } from './tablo.builder/tablo.old';
 import { TabloNew } from './tablo.builder/tablo.new';
+import { HttpError } from '../errors/http-error.class';
 
 export class TabloController extends BaseController {
 	constructor(
@@ -43,10 +44,10 @@ export class TabloController extends BaseController {
 		this.tablo
 			.check(Number(this.config.get('MOXA_PORT_1')), this.config.get('MOXA_IP'))
 			.then((result) => {
-				if (result) this.ok(res, 'Tablo 1 online');
+				if (result) this.ok(res, { status: 'Табло 1 онлайн' });
 			})
 			.catch(() => {
-				res.status(422).json({ err: 'Tablo 1 offline' });
+				next(new HttpError('Табло 1 оффлайн', 422, 'GET TABLO1'));
 			});
 	}
 
@@ -54,39 +55,40 @@ export class TabloController extends BaseController {
 		this.tablo
 			.check(Number(this.config.get('MOXA_PORT_2')), this.config.get('MOXA_IP'))
 			.then((result) => {
-				if (result) this.ok(res, 'Tablo 1 online');
+				if (result) this.ok(res, { status: 'Табло 2 онлайн' });
 			})
 			.catch(() => {
-				res.status(422).json({ err: 'Tablo 2 offline' });
+				next(new HttpError('Табло 2 оффлайн', 422, 'GET TABLO2'));
 			});
 	}
 
 	sendTablo1(req: Request<{}, {}, TabloControllerDto>, res: Response, next: NextFunction): void {
+		this.logger.debug(`Получена строка: ${req.body.msg}`);
 		const buf = this.tabloOld.tabloBuild(req.body.msg);
 		this.tablo
 			.send(buf, Number(this.config.get('MOXA_PORT_1')), this.config.get('MOXA_IP'))
 			.then((result) => {
 				if (result) {
-					this.ok(res, 'Tablo 1 message sent');
+					this.ok(res, { status: 'Табло 1 успешная отправка' });
 				}
 			})
 			.catch(() => {
-				res.status(422).json({ err: 'Tablo  offline' });
+				next(new HttpError('Табло 1 оффлайн', 422, 'GET TABLO1'));
 			});
 	}
 
 	sendTablo2(req: Request<{}, {}, TabloControllerDto>, res: Response, next: NextFunction): void {
+		this.logger.debug(`Получена строка: ${req.body.msg}`);
 		const buf = this.tabloNew.tabloBuild(req.body.msg);
-		console.log(buf);
 		this.tablo
 			.send(buf, Number(this.config.get('MOXA_PORT_2')), this.config.get('MOXA_IP'))
 			.then((result) => {
 				if (result) {
-					this.ok(res, 'Tablo 2 message sent');
+					this.ok(res, { status: 'Табло 2 успешная отправка' });
 				}
 			})
 			.catch(() => {
-				res.status(422).json({ err: 'Tablo  offline' });
+				next(new HttpError('Табло 2 оффлайн', 422, 'GET TABLO2'));
 			});
 	}
 }

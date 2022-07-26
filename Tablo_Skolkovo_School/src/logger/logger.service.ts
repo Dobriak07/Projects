@@ -1,9 +1,8 @@
+import 'reflect-metadata';
 import log4js from 'log4js';
 import { ILogger } from './logger.inteface';
-import 'reflect-metadata';
-import { inject, injectable, LazyServiceIdentifer } from 'inversify';
+import { injectable } from 'inversify';
 import { FileService } from '../file/file.service';
-import { TYPES } from '../types';
 import { IConfigService } from '../config/config.service.interface';
 
 export const DEFAULT_LOG_SETTINGS = {

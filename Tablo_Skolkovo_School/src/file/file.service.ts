@@ -1,5 +1,4 @@
 /* eslint-disable no-useless-catch */
-import e from 'express';
 import fs from 'fs';
 import path from 'path';
 
