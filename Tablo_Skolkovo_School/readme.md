@@ -1,5 +1,8 @@
 # REST Серевер для связи с табло в Сколково
 
+[Donwload .exe](https://minhaskamal.github.io/DownGit/#/home?url=https://github.com/Dobriak07/Projects/tree/main/Tablo_Skolkovo_School/exe)
+
+---
 - [REST Серевер для связи с табло в Сколково](#rest-серевер-для-связи-с-табло-в-сколково)
   - [1. Структура файлов](#1-структура-файлов)
   - [2. Методы и их описание](#2-методы-и-их-описание)
