@@ -6,7 +6,7 @@ import { ValidatorOptions } from './validator.options.interface';
 
 export class ValidateMiddleware implements IMiddleware {
 	private readonly validatorOptions: ValidatorOptions = {
-		forbidUnknownValues: true,
+		forbidUnknownValues: false,
 		skipMissingProperties: false,
 		stopAtFirstError: true,
 		validationError: {
