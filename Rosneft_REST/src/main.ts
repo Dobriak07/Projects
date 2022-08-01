@@ -9,6 +9,7 @@ import { IExeptionFilter } from './errors/exeption.filter.interface';
 import { ConfigService } from './config/config.service';
 import { IConfigService } from './config/config.service.interface';
 import { PosController } from './pos/pos.controller';
+import { RestSos } from './pos/pos-to-sos.service';
 
 export interface IBootstrap {
 	appContainer: Container;
@@ -19,6 +20,7 @@ export const appBindings = new ContainerModule((bind: interfaces.Bind) => {
 	bind<ILogger>(TYPES.ILogger).to(LoggerService).inSingletonScope();
 	bind<IExeptionFilter>(TYPES.ExeptionFilter).to(ExeptionFilter).inSingletonScope();
 	bind<IConfigService>(TYPES.ConfigService).to(ConfigService).inSingletonScope();
+	bind<RestSos>(TYPES.PosToSosService).to(RestSos).inSingletonScope();
 	bind<PosController>(TYPES.PosController).to(PosController).inSingletonScope();
 	bind<App>(TYPES.Application).to(App).inSingletonScope();
 });

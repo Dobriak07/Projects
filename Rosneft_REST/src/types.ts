@@ -4,4 +4,5 @@ export const TYPES = {
 	ExeptionFilter: Symbol.for('ExeptionFilter'),
 	ConfigService: Symbol.for('ConfigService'),
 	PosController: Symbol.for('PosController'),
+	PosToSosService: Symbol.for('PosToSosService'),
 };
