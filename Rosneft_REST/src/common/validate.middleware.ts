@@ -6,7 +6,7 @@ import { ValidatorOptions } from './validator.options.interface';
 
 export class ValidateMiddleware implements IMiddleware {
 	private readonly validatorOptions: ValidatorOptions = {
-		forbidUnknownValues: true,
+		forbidUnknownValues: false,
 		skipMissingProperties: false,
 		stopAtFirstError: true,
 		validationError: {
@@ -19,6 +19,7 @@ export class ValidateMiddleware implements IMiddleware {
 	execute({ body }: Request, res: Response, next: NextFunction): void {
 		const instance = plainToClass(this.ClassToValidate, body);
 		validate(instance, this.validatorOptions).then((errors: ValidationError[]) => {
+			console.log(errors);
 			if (errors.length > 0) {
 				const errObj = {
 					err: errors.map((value) => {

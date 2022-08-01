@@ -3,11 +3,11 @@ import express, { Express } from 'express';
 import { Server } from 'http';
 import { ILogger } from './logger/logger.inteface';
 import { json } from 'body-parser';
-import { TabloController } from './tablo/tablo.controller';
 import { ExeptionFilter } from './errors/exeption.filter';
 import { inject, injectable } from 'inversify';
 import { TYPES } from './types';
 import { ConfigService } from './config/config.service';
+import { PosController } from './pos/pos.controller';
 
 @injectable()
 export class App {
@@ -17,7 +17,7 @@ export class App {
 
 	constructor(
 		@inject(TYPES.ILogger) private logger: ILogger,
-		@inject(TYPES.TabloController) private tabloController: TabloController,
+		@inject(TYPES.PosController) private posController: PosController,
 		@inject(TYPES.ExeptionFilter) private exeptionFilter: ExeptionFilter,
 		@inject(TYPES.ConfigService) private ConfigService: ConfigService,
 	) {
@@ -28,14 +28,7 @@ export class App {
 
 	useRoutes(): void {
 		this.app.use(json());
-		// this.app.use((req, res, next) => {
-		// 	this.logger.debug(`Time ${Date.now()}`);
-		// 	this.logger.debug(`Request`, req.originalUrl);
-		// 	this.logger.debug('Body', req.body);
-		// 	this.logger.debug(`Response`, res.statusCode);
-		// 	next();
-		// });
-		this.app.use('/v1', this.tabloController.router);
+		this.app.use(this.posController.router);
 	}
 
 	useExeptionFilters(): void {
