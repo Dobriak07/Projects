@@ -9,13 +9,14 @@ import { ValidateMiddleware } from '../common/validate.middleware';
 import { ConfigService } from '../config/config.service';
 import { HttpError } from '../errors/http-error.class';
 import { IPosController } from './pos.controller.interface';
-import { RestSos } from './pos-to-sos.service';
+import { SosRest } from './sos.service';
+import { PosControllerDtoTest } from './dto/test.pos.controller.dto';
 
 export class PosController extends BaseController implements IPosController {
 	constructor(
 		@inject(TYPES.ILogger) private logger: ILogger,
+		@inject(TYPES.SosService) private sos: SosRest,
 		@inject(TYPES.ConfigService) private config: ConfigService,
-		@inject(TYPES.PosToSosService) private sos: RestSos,
 	) {
 		super(logger);
 		this.bindRoutes([
@@ -23,10 +24,10 @@ export class PosController extends BaseController implements IPosController {
 				path: '/PosEvent',
 				method: 'post',
 				func: this.sendRestSecuros,
-				middlewares: [new ValidateMiddleware(PosControllerDto)],
+				middlewares: [new ValidateMiddleware(PosControllerDtoTest)],
 			},
 		]);
-		config.init();
+		this.config.init();
 	}
 
 	sendRestSecuros(req: Request<{}, {}, PosControllerDto>, res: Response, next: NextFunction): void {
